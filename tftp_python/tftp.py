@@ -35,7 +35,11 @@ TFTP_PUT = 2
 
 def make_packet_rrq(filename, mode):
     # Note the exclamation mark in the format string to pack(). What is it for?
+    print(filename)
+    print(mode)
+    print(struct.pack("!H", OPCODE_RRQ))
     return struct.pack("!H", OPCODE_RRQ) + filename + '\0' + mode + '\0'
+    # return struct.pack("!HsHsH", OPCODE_RRQ, filename, 0, mode, 0)
 
 def make_packet_wrq(filename, mode):
     return "" # TODO
@@ -66,6 +70,7 @@ def parse_packet(msg):
     return None
 
 def tftp_transfer(fd, hostname, direction):
+    #fd = file descriptor
     # Implement this function
     
     # Open socket interface
@@ -74,6 +79,33 @@ def tftp_transfer(fd, hostname, direction):
     #  the corresponding request.
     
     # Put or get the file, block by block, in a loop.
+
+    filename = fd.name
+
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    print(socket.gethostbyname(socket.gethostname()))
+    # c_ip = socket.gethostbyname(socket.gethostname())
+    c_ip = ''
+    c_port = 50001
+    s.bind((c_ip, c_port))
+    # print(s.getaddrinfo(hostname, 69))
+    try:
+
+        if direction == TFTP_GET:
+            #receive
+            rreq = make_packet_rrq(filename, MODE_NETASCII)
+            # bytes_sent = s.send(rreq)
+            print(bytes_sent)
+
+
+        elif direction == TFTP_PUT:
+            return ""
+            #send
+
+    except socket.error as e:
+        print("Error: " + e.strerror)
+
+
     while True:
         # Wait for packet, write the data to the filedescriptor or
         # read the next block from the file. Send new packet to server.
@@ -108,9 +140,9 @@ def main():
         return
 
     if direction == TFTP_GET:
-        print "Transfer file %s from host %s" % (filename, hostname)
+        print ("Transfer file %s from host %s" % (filename, hostname))
     else:
-        print "Transfer file %s to host %s" % (filename, hostname)
+        print ("Transfer file %s to host %s" % (filename, hostname))
 
     try:
         if direction == TFTP_GET:

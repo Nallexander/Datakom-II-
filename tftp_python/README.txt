@@ -16,7 +16,7 @@ PROGRAMMING
 Now you are ready to start programming the client that should be able to GET a
 file from a server as well as PUT a file onto a server.
 
-You will need to extend the skeleton code in tftp.py and do the following:
+You will need to extend the skeleton code in tftptra.py and do the following:
  * Write the socket handling code to open the socket to the server (code for
    closing the socket is provided).
  * Construct packets according to the standard. Send, receive, and parse all
