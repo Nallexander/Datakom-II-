@@ -35,11 +35,9 @@ TFTP_PUT = 2
 
 def make_packet_rrq(filename, mode):
     # Note the exclamation mark in the format string to pack(). What is it for?
-    print(filename)
-    print(mode)
-    print(struct.pack("!H", OPCODE_RRQ))
-    return struct.pack("!H", OPCODE_RRQ) + filename + '\0' + mode + '\0'
-    # return struct.pack("!HsHsH", OPCODE_RRQ, filename, 0, mode, 0)
+    s = filename + '\0' + mode + '\0'
+    return struct.pack("!H", OPCODE_RRQ) + s.encode('ascii')
+    # return struct.pack("!HsHsH", OPCODE_RRQ, bytes(filename, 'utf-8'), 0, bytes(mode, 'utf-8'), 0)
 
 def make_packet_wrq(filename, mode):
     return "" # TODO
@@ -83,18 +81,21 @@ def tftp_transfer(fd, hostname, direction):
     filename = fd.name
 
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    print(socket.gethostbyname(socket.gethostname()))
+    # print(socket.gethostbyname(socket.gethostname()))
     # c_ip = socket.gethostbyname(socket.gethostname())
-    c_ip = ''
-    c_port = 50001
-    s.bind((c_ip, c_port))
+    client_ip = ''
+    client_port = 50001
+    # s.bind((client_ip, client_port))
+    # host_ip = socket.getaddrinfo(hostname, 69, 0, 0, socket.SOL_TCP)
     # print(s.getaddrinfo(hostname, 69))
     try:
-
+        s.connect((hostname, 6969))
+        print("hej")
         if direction == TFTP_GET:
             #receive
             rreq = make_packet_rrq(filename, MODE_NETASCII)
-            # bytes_sent = s.send(rreq)
+            
+            bytes_sent = s.sendto(rreq, (hostname, 69))
             print(bytes_sent)
 
 
