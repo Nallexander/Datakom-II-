@@ -56,6 +56,7 @@ def parse_packet(msg):
         first value is the opcode as an integer and the following values are
         the other parameters of the packets in python data types"""
     opcode = struct.unpack("!H", msg[:2])[0]
+    print(opcode)
     if opcode == OPCODE_RRQ:
         l = msg[2:].split('\0')
         if len(l) != 3:
@@ -65,6 +66,13 @@ def parse_packet(msg):
         # TDOO
         return opcode, # something here
     # TODO
+    elif opcode == OPCODE_DATA:
+        block = msg[2:4]
+        recv_msg = msg[4:]
+        print('test')
+        print(block)
+        print(recv_msg)
+        return opcode, block, recv_msg
     return None
 
 def tftp_transfer(fd, hostname, direction):
@@ -80,23 +88,25 @@ def tftp_transfer(fd, hostname, direction):
 
     filename = fd.name
 
-    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     # print(socket.gethostbyname(socket.gethostname()))
-    # c_ip = socket.gethostbyname(socket.gethostname())
-    client_ip = ''
-    client_port = 50001
+    # client_ip = socket.gethostbyname(socket.gethostname())
+    # client_ip = ''
+    # client_port = 50001
     # s.bind((client_ip, client_port))
     # host_ip = socket.getaddrinfo(hostname, 69, 0, 0, socket.SOL_TCP)
     # print(s.getaddrinfo(hostname, 69))
     try:
-        s.connect((hostname, 6969))
-        print("hej")
+        # s.connect((hostname, 6969))
         if direction == TFTP_GET:
             #receive
             rreq = make_packet_rrq(filename, MODE_NETASCII)
+            bytes_sent = s.sendto(rreq, (hostname, 6969))
             
-            bytes_sent = s.sendto(rreq, (hostname, 69))
-            print(bytes_sent)
+            recv_ack = s.recv(512)
+            parse_packet(recv_ack)
+            # print(recv_ack)
+
 
 
         elif direction == TFTP_PUT:
@@ -107,11 +117,11 @@ def tftp_transfer(fd, hostname, direction):
         print("Error: " + e.strerror)
 
 
-    while True:
+    # while True:
         # Wait for packet, write the data to the filedescriptor or
         # read the next block from the file. Send new packet to server.
         # Don't forget to deal with timeouts and received error packets.
-        pass
+        # pass
 
 
 def usage():
