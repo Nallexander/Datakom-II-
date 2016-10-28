@@ -122,6 +122,8 @@ def tftp_transfer(fd, hostname, direction):
                 pack_block = parsed_pack[1]
                 if pack_block in block_tuple:
                     #Send ack again
+                    ack = make_packet_ack(parsed_pack[1])
+                    bytes_sent = s.sendto(ack, recv_addr)
                     print('fail')
                     True
                 else:
