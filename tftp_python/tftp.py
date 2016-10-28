@@ -46,8 +46,7 @@ def make_packet_data(blocknr, data):
     return "" # TODO
 
 def make_packet_ack(blocknr):
-    
-    return struct.pack("!H", OPCODE_ACK) + blocknr
+    return struct.pack("!HH", OPCODE_ACK, blocknr)
 
 def make_packet_err(errcode, errmsg):
     return "" # TODO
@@ -57,8 +56,6 @@ def parse_packet(msg):
         first value is the opcode as an integer and the following values are
         the other parameters of the packets in python data types"""
     opcode = struct.unpack("!H", msg[:2])[0]
-    print('opcode:')
-    print(opcode)
     if opcode == OPCODE_RRQ:
         l = msg[2:].split('\0')
         if len(l) != 3:
@@ -69,7 +66,7 @@ def parse_packet(msg):
         return opcode, # something here
     # TODO
     elif opcode == OPCODE_DATA:
-        block = msg[2:4]
+        block = struct.unpack("!H", msg[2:4])[0]
         recv_msg = msg[4:]
         return opcode, block, recv_msg
     return None
@@ -99,29 +96,73 @@ def tftp_transfer(fd, hostname, direction):
         # s.connect((hostname, 6969))
         if direction == TFTP_GET:
             #receive
-            rreq = make_packet_rrq(filename, MODE_NETASCII)
+            rreq = make_packet_rrq(filename, MODE_OCTET)
             bytes_sent = s.sendto(rreq, (hostname, 6969))
             
-            recv_pack = s.recv(512)
+            recv = s.recvfrom(512)
+            recv_pack = recv[0]
+            recv_addr = recv[1]
+            
             parsed_pack = parse_packet(recv_pack)
-            decoded_msg = parsed_pack[2].decode('ascii')
-            print('block:')
-            print(decoded_msg)
+            pack_block = parsed_pack[1]
 
-
-            pack_size = sys.getsizeof(decoded_msg)
-            print('storlek:')
-            print(pack_size)
-            while pack_size >= 545:
-                ack = make_packet_ack(parsed_pack[1])
-                s.sendto(ack, (hostname, 6969))
-                recv_pack = s.recv(512)
+            block_tuple = (pack_block,)
+            msg = parsed_pack[2]
+            
+            ack = make_packet_ack(parsed_pack[1])
+            bytes_sent = s.sendto(ack, recv_addr)
+            current_msg_size = sys.getsizeof(msg)
+            
+            while current_msg_size >= 512:
+                recv = s.recvfrom(512)
+                recv_pack = recv[0]
+                recv_block = recv[1]
                 parsed_pack = parse_packet(recv_pack)
-                decoded_msg += parsed_pack[2].decode('ascii')
-                print(decoded_msg)
-                pack_size = sys.getsizeof(recv_pack)
-                print(pack_size)
-            # print(recv_ack)
+                pack_block = parsed_pack[1]
+                if pack_block in block_tuple:
+                    #Send ack again
+                    print('fail')
+                    True
+                else:
+                    #Add msg and block 
+                    block_tuple = block_tuple + (pack_block,)
+                    pack_msg = parsed_pack[2]
+                    msg = msg + pack_msg
+                    ack = make_packet_ack(parsed_pack[1])
+                    bytes_sent = s.sendto(ack, recv_addr)
+                    current_msg_size = sys.getsizeof(pack_msg)
+                    #Send new ack
+
+
+
+                print(current_msg_size)
+                print(block_tuple)
+
+                        
+            fd.write(msg)
+            
+
+
+            # decoded_msg2 = parsed_pack[2].decode('ascii')
+            # pack_size = sys.getsizeof(decoded_msg)
+            # pack_size2 = sys.getsizeof(decoded_msg)
+            # print(pack_size)
+            # print(pack_size2)
+
+            # print('storlek:')
+            # print(pack_size)
+            # while pack_size >= 545:
+            #     ack = make_packet_ack(parsed_pack[1])
+            #     print(parsed_pack[1])
+            #     bytes_sent = s.sendto(ack, (hostname, 6969))
+            #     print(bytes_sent)
+            #     recv_pack = s.recv(512)
+            #     parsed_pack = parse_packet(recv_pack)
+            #     decoded_msg = parsed_pack[2].decode('ascii')
+            #     print(decoded_msg)
+            #     pack_size = sys.getsizeof(recv_pack)
+            #     print(pack_size)
+            #     print(decoded_msg)
 
 
 
