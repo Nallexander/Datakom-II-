@@ -46,7 +46,8 @@ def make_packet_data(blocknr, data):
     return "" # TODO
 
 def make_packet_ack(blocknr):
-    return "" # TODO
+    
+    return struct.pack("!H", OPCODE_ACK) + blocknr
 
 def make_packet_err(errcode, errmsg):
     return "" # TODO
@@ -56,6 +57,7 @@ def parse_packet(msg):
         first value is the opcode as an integer and the following values are
         the other parameters of the packets in python data types"""
     opcode = struct.unpack("!H", msg[:2])[0]
+    print('opcode:')
     print(opcode)
     if opcode == OPCODE_RRQ:
         l = msg[2:].split('\0')
@@ -69,9 +71,6 @@ def parse_packet(msg):
     elif opcode == OPCODE_DATA:
         block = msg[2:4]
         recv_msg = msg[4:]
-        print('test')
-        print(block)
-        print(recv_msg)
         return opcode, block, recv_msg
     return None
 
@@ -103,8 +102,25 @@ def tftp_transfer(fd, hostname, direction):
             rreq = make_packet_rrq(filename, MODE_NETASCII)
             bytes_sent = s.sendto(rreq, (hostname, 6969))
             
-            recv_ack = s.recv(512)
-            parse_packet(recv_ack)
+            recv_pack = s.recv(512)
+            parsed_pack = parse_packet(recv_pack)
+            decoded_msg = parsed_pack[2].decode('ascii')
+            print('block:')
+            print(decoded_msg)
+
+
+            pack_size = sys.getsizeof(decoded_msg)
+            print('storlek:')
+            print(pack_size)
+            while pack_size >= 545:
+                ack = make_packet_ack(parsed_pack[1])
+                s.sendto(ack, (hostname, 6969))
+                recv_pack = s.recv(512)
+                parsed_pack = parse_packet(recv_pack)
+                decoded_msg += parsed_pack[2].decode('ascii')
+                print(decoded_msg)
+                pack_size = sys.getsizeof(recv_pack)
+                print(pack_size)
             # print(recv_ack)
 
 
