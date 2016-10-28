@@ -99,7 +99,7 @@ def tftp_transfer(fd, hostname, direction):
             rreq = make_packet_rrq(filename, MODE_OCTET)
             bytes_sent = s.sendto(rreq, (hostname, 6969))
             
-            recv = s.recvfrom(512)
+            recv = s.recvfrom(BLOCK_SIZE+4)
             recv_pack = recv[0]
             recv_addr = recv[1]
             
@@ -111,10 +111,11 @@ def tftp_transfer(fd, hostname, direction):
             
             ack = make_packet_ack(parsed_pack[1])
             bytes_sent = s.sendto(ack, recv_addr)
-            current_msg_size = sys.getsizeof(msg)
+            current_msg_size = len(parsed_pack[2])
+            print(current_msg_size)
             
-            while current_msg_size >= 512:
-                recv = s.recvfrom(512)
+            while current_msg_size >= BLOCK_SIZE:
+                recv = s.recvfrom(BLOCK_SIZE+4)
                 recv_pack = recv[0]
                 recv_block = recv[1]
                 parsed_pack = parse_packet(recv_pack)
@@ -130,7 +131,7 @@ def tftp_transfer(fd, hostname, direction):
                     msg = msg + pack_msg
                     ack = make_packet_ack(parsed_pack[1])
                     bytes_sent = s.sendto(ack, recv_addr)
-                    current_msg_size = sys.getsizeof(pack_msg)
+                    current_msg_size = len(parsed_pack[2])
                     #Send new ack
 
 
@@ -138,7 +139,7 @@ def tftp_transfer(fd, hostname, direction):
                 print(current_msg_size)
                 print(block_tuple)
 
-                        
+
             fd.write(msg)
             
 
