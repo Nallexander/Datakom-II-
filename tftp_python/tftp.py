@@ -14,7 +14,7 @@ MODE_NETASCII= "netascii"
 MODE_OCTET=    "octet"
 MODE_MAIL=     "mail"
 
-TFTP_PORT= 69
+TFTP_PORT= 13069
 
 # Timeout in seconds
 TFTP_TIMEOUT= 2
@@ -40,16 +40,18 @@ def make_packet_rrq(filename, mode):
     # return struct.pack("!HsHsH", OPCODE_RRQ, bytes(filename, 'utf-8'), 0, bytes(mode, 'utf-8'), 0)
 
 def make_packet_wrq(filename, mode):
-    return "" # TODO
+    s = filename + '\0' + mode + '\0'
+    return struct.pack("!H", OPCODE_WRQ) + s.encode('ascii')
 
 def make_packet_data(blocknr, data):
-    return "" # TODO
+    return struct.pack("!HH", OPCODE_DATA, blocknr) + data
 
 def make_packet_ack(blocknr):
     return struct.pack("!HH", OPCODE_ACK, blocknr)
 
 def make_packet_err(errcode, errmsg):
-    return "" # TODO
+    s = errcode + errmsg + '\0'
+    return struct.pack("!H", OPCODE_ERR) + s.encode('ascii')
 
 def parse_packet(msg):
     """This function parses a recieved packet and returns a tuple where the
@@ -61,14 +63,22 @@ def parse_packet(msg):
         if len(l) != 3:
             return None
         return opcode, l[1], l[2]
-    elif opcode == OPCODE_WRQ:
-        # TDOO
-        return opcode, # something here
-    # TODO
-    elif opcode == OPCODE_DATA:
+    elif opcode == OPCODE_ACK:
         block = struct.unpack("!H", msg[2:4])[0]
+        return opcode, block
+    elif opcode == OPCODE_WRQ:
+        filename = msg[2:].split('\0')
+        mode = msg[(2+len(filename)+1):].split('\0')
+        return opcode, filename, mode
+    elif opcode == OPCODE_DATA:
         recv_msg = msg[4:]
+        block = struct.unpack("!H", msg[2:4])[0]
         return opcode, block, recv_msg
+    elif opcode == OPCODE_ERR:
+        error_code = struct.unpack("!H", msg[2:4])[0]
+        error_message = msg[4:]
+        # error_message = struct.unpack("!H", msg[4:])[0]
+        return opcode, error_code, error_message
     return None
 
 def tftp_transfer(fd, hostname, direction):
@@ -85,19 +95,12 @@ def tftp_transfer(fd, hostname, direction):
     filename = fd.name
 
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    # print(socket.gethostbyname(socket.gethostname()))
-    # client_ip = socket.gethostbyname(socket.gethostname())
-    # client_ip = ''
-    # client_port = 50001
-    # s.bind((client_ip, client_port))
-    # host_ip = socket.getaddrinfo(hostname, 69, 0, 0, socket.SOL_TCP)
-    # print(s.getaddrinfo(hostname, 69))
     try:
-        # s.connect((hostname, 6969))
         if direction == TFTP_GET:
             #receive
             rreq = make_packet_rrq(filename, MODE_OCTET)
-            bytes_sent = s.sendto(rreq, (hostname, 6969))
+            bytes_sent = s.sendto(rreq, (hostname, TFTP_PORT))
+            print('rreq sent')
             
             recv = s.recvfrom(BLOCK_SIZE+4)
             recv_pack = recv[0]
@@ -112,7 +115,6 @@ def tftp_transfer(fd, hostname, direction):
             ack = make_packet_ack(parsed_pack[1])
             bytes_sent = s.sendto(ack, recv_addr)
             current_msg_size = len(parsed_pack[2])
-            print(current_msg_size)
             
             while current_msg_size >= BLOCK_SIZE:
                 recv = s.recvfrom(BLOCK_SIZE+4)
@@ -138,38 +140,42 @@ def tftp_transfer(fd, hostname, direction):
 
 
 
-                print(current_msg_size)
                 print(block_tuple)
 
 
             fd.write(msg)
-            
-
-
-            # decoded_msg2 = parsed_pack[2].decode('ascii')
-            # pack_size = sys.getsizeof(decoded_msg)
-            # pack_size2 = sys.getsizeof(decoded_msg)
-            # print(pack_size)
-            # print(pack_size2)
-
-            # print('storlek:')
-            # print(pack_size)
-            # while pack_size >= 545:
-            #     ack = make_packet_ack(parsed_pack[1])
-            #     print(parsed_pack[1])
-            #     bytes_sent = s.sendto(ack, (hostname, 6969))
-            #     print(bytes_sent)
-            #     recv_pack = s.recv(512)
-            #     parsed_pack = parse_packet(recv_pack)
-            #     decoded_msg = parsed_pack[2].decode('ascii')
-            #     print(decoded_msg)
-            #     pack_size = sys.getsizeof(recv_pack)
-            #     print(pack_size)
-            #     print(decoded_msg)
-
-
 
         elif direction == TFTP_PUT:
+            wreq = make_packet_wrq(filename, MODE_OCTET)
+            bytes_sent = s.sendto(wreq, (hostname, TFTP_PORT))
+            recv = s.recvfrom(100)
+            recv_addr = recv[1]
+            parsed_recv = parse_packet(recv[0])
+            if parsed_recv[0] == OPCODE_ACK:
+                block_ack = parsed_recv[1]
+                block_sent = 0
+                current_msg = "start"
+                while len(current_msg) != 0:
+                    print(current_msg)
+                    current_msg = fd.read(512)
+                    if len(current_msg) != 0:
+                        current_packet = make_packet_data(block_ack+1, current_msg)
+                        bytes_sent = s.sendto(current_packet, recv_addr)
+                        block_sent = block_ack+1
+                        recv = s.recvfrom(100)
+                        recv_parsed = parse_packet(recv[0])
+                        if recv_parsed[0] == OPCODE_ACK:
+                            block_ack = recv_parsed[1]
+                        elif recv_parsed[0] == OPCODE_ERR:
+                            print('fail')
+                        while block_sent != block_ack:
+                            bytes_sent = s.sendto(current_packet, recv_addr)
+                            recv = s.recvfrom(100)
+                            recv_parsed = parse_packet(recv[0])
+                            block_ack = recv_parsed[1]
+                    
+
+
             return ""
             #send
 
