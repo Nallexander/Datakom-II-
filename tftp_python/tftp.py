@@ -109,7 +109,7 @@ def tftp_transfer(fd, hostname, direction):
             parsed_pack = parse_packet(recv_pack)
             pack_block = parsed_pack[1]
 
-            block_tuple = (pack_block,)
+            current_block = pack_block
             msg = parsed_pack[2]
             
             ack = make_packet_ack(parsed_pack[1])
@@ -123,7 +123,7 @@ def tftp_transfer(fd, hostname, direction):
                 recv_block = recv[1]
                 parsed_pack = parse_packet(recv_pack)
                 pack_block = parsed_pack[1]
-                if pack_block in block_tuple:
+                if pack_block == current_block:
                     #Send ack again
                     ack = make_packet_ack(parsed_pack[1])
                     bytes_sent = s.sendto(ack, recv_addr)
@@ -131,7 +131,7 @@ def tftp_transfer(fd, hostname, direction):
                     True
                 else:
                     #Add msg and block 
-                    block_tuple = block_tuple + (pack_block,)
+                    current_block = pack_block
                     pack_msg = parsed_pack[2]
                     msg = msg + pack_msg
                     ack = make_packet_ack(parsed_pack[1])
@@ -141,7 +141,7 @@ def tftp_transfer(fd, hostname, direction):
 
 
 
-                print(block_tuple)
+                print("Getting block: %d"% (current_block))
 
 
             fd.write(msg)
