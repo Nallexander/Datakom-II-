@@ -14,10 +14,10 @@ MODE_NETASCII= "netascii"
 MODE_OCTET=    "octet"
 MODE_MAIL=     "mail"
 
-TFTP_PORT=10069
+TFTP_PORT=69
 
 # Timeout in seconds
-TFTP_TIMEOUT= 2
+TFTP_TIMEOUT= 1
 
 ERROR_CODES = ["Undef",
                "File not found",
@@ -114,7 +114,15 @@ def tftp_transfer(fd, hostname, direction):
         rreq = make_packet_rrq(filename, MODE_OCTET)
         bytes_sent = s.sendto(rreq, (hostname, TFTP_PORT))
         # print('rreq sent')
-        recv = s.recvfrom(BLOCK_SIZE+4)
+        flag = 1
+        while(flag == 1):
+            print("try")
+            try:
+                recv = s.recvfrom(BLOCK_SIZE+4)
+                flag = 0
+            except s.sockettimeout:
+                flag = 1
+       
         if handle_error(recv):
             return()
         recv_pack = recv[0]
@@ -132,7 +140,14 @@ def tftp_transfer(fd, hostname, direction):
         
         
         while current_msg_size >= BLOCK_SIZE:
-            recv = s.recvfrom(BLOCK_SIZE+4)
+            flag = 1
+            while(flag == 1):
+                print("try")
+                try:
+                    recv = s.recvfrom(BLOCK_SIZE+4)
+                    flag = 0
+                except s.sockettimeout:
+                    flag = 1
             if handle_error(recv):
                 return()
             recv_pack = recv[0]
