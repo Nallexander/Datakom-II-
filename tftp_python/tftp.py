@@ -269,7 +269,7 @@ def main():
             return
         filename = sys.argv[2]
         hostname = sys.argv[3]
-        TFTP_PORT = sys.argv[4]
+        TFTP_PORT = int(sys.argv[4])
         
    
         
