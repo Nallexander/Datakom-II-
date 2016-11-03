@@ -244,6 +244,7 @@ def usage():
 
 def main():
     # No need to change this function
+    global TFTP_PORT
     direction = TFTP_GET
     if len(sys.argv) == 3:
         filename = sys.argv[1]
@@ -258,14 +259,28 @@ def main():
             return
         filename = sys.argv[2]
         hostname = sys.argv[3]
+    elif len(sys.argv) ==5:
+        if sys.argv[1] == "-g":
+            direction = TFTP_GET
+        elif sys.argv[1] == "-p":
+            direction = TFTP_PUT
+        else:
+            usage()
+            return
+        filename = sys.argv[2]
+        hostname = sys.argv[3]
+        TFTP_PORT = sys.argv[4]
+        
+   
+        
     else:
         usage()
         return
 
     if direction == TFTP_GET:
-        print ("Transfer file %s from host %s" % (filename, hostname))
+        print ("Transfer file %s from host %s and port %d" % (filename, hostname,TFTP_PORT))
     else:
-        print ("Transfer file %s to host %s" % (filename, hostname))
+        print ("Transfer file %s to host %s and port %d" % (filename, hostname,TFTP_PORT))
 
     try:
         if direction == TFTP_GET:
