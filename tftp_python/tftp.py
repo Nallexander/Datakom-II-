@@ -120,7 +120,7 @@ def tftp_transfer(fd, hostname, direction):
             try:
                 recv = s.recvfrom(BLOCK_SIZE+4)
                 flag = 0
-            except socket.timeout:
+            except socket.sockettimeout:
                 print("timeoutexception")
                 flag = 1
        
@@ -147,7 +147,7 @@ def tftp_transfer(fd, hostname, direction):
                 try:
                     recv = s.recvfrom(BLOCK_SIZE+4)
                     flag = 0
-                except  socket.timeout:
+                except  socket.sockettimeout:
                     print("timeoutexception")
                     flag = 1
             if handle_error(recv):
@@ -191,7 +191,7 @@ def tftp_transfer(fd, hostname, direction):
                 
                 recv = s.recvfrom(100)
                 flag = 0
-            except socket.timeout:
+            except socket.sockettimeout:
                 flag = 1
        
         
@@ -220,7 +220,7 @@ def tftp_transfer(fd, hostname, direction):
                 
                             recv = s.recvfrom(100)
                             flag = 0
-                        except socket.timeout:
+                        except socket.sockettimeout:
                             print("timeoutexception")
                             flag = 1
                     
