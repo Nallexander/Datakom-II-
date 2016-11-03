@@ -182,7 +182,16 @@ def tftp_transfer(fd, hostname, direction):
 
         wreq = make_packet_wrq(filename, MODE_OCTET)
         bytes_sent = s.sendto(wreq, (hostname, TFTP_PORT))
-        recv = s.recvfrom(100)
+        flag = 1
+        while(flag == 1):
+            print("try")
+            try:
+                
+                recv = s.recvfrom(100)
+                flag = 0
+            except s.sockettimeout:
+                flag = 1
+       
         
         
         if handle_error(recv[0]):
@@ -202,7 +211,16 @@ def tftp_transfer(fd, hostname, direction):
                     current_packet = make_packet_data(block_ack+1, current_msg)
                     bytes_sent = s.sendto(current_packet, recv_addr)
                     block_sent = block_ack+1
-                    recv = s.recvfrom(100)
+                    flag = 1
+                    while(flag == 1):
+                        print("try")
+                        try:
+                
+                            recv = s.recvfrom(100)
+                            flag = 0
+                        except s.sockettimeout:
+                            flag = 1
+                    
                     if handle_error(recv):
                         return()
                     recv_parsed = parse_packet(recv[0])
@@ -215,7 +233,15 @@ def tftp_transfer(fd, hostname, direction):
                         if DEBUG:
                             print('packet loss')
                         bytes_sent = s.sendto(current_packet, recv_addr)
-                        recv = s.recvfrom(100)
+                        flag = 1
+                        while(flag == 1):
+                            print("try")
+                            try:
+                
+                                recv = s.recvfrom(100)
+                                flag = 0
+                            except s.sockettimeout:
+                                flag = 1
                         if handle_error(recv):
                             return()
                         recv_parsed = parse_packet(recv[0])
