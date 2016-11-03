@@ -116,11 +116,11 @@ def tftp_transfer(fd, hostname, direction):
         # print('rreq sent')
         flag = 1
         while(flag == 1):
-            print("try")
+            print("try 1")
             try:
                 recv = s.recvfrom(BLOCK_SIZE+4)
                 flag = 0
-            except socket.sockettimeout:
+            except:
                 print("timeoutexception")
                 flag = 1
        
@@ -143,11 +143,11 @@ def tftp_transfer(fd, hostname, direction):
         while current_msg_size >= BLOCK_SIZE:
             flag = 1
             while(flag == 1):
-                print("try")
+                print("try 2")
                 try:
                     recv = s.recvfrom(BLOCK_SIZE+4)
                     flag = 0
-                except  socket.sockettimeout:
+                except:
                     print("timeoutexception")
                     flag = 1
             if handle_error(recv):
@@ -186,12 +186,12 @@ def tftp_transfer(fd, hostname, direction):
         bytes_sent = s.sendto(wreq, (hostname, TFTP_PORT))
         flag = 1
         while(flag == 1):
-            print("try")
+            print("try 3")
             try:
                 
                 recv = s.recvfrom(100)
                 flag = 0
-            except socket.sockettimeout:
+            except:
                 flag = 1
        
         
@@ -220,7 +220,7 @@ def tftp_transfer(fd, hostname, direction):
                 
                             recv = s.recvfrom(100)
                             flag = 0
-                        except socket.sockettimeout:
+                        except:
                             print("timeoutexception")
                             flag = 1
                     
@@ -238,12 +238,12 @@ def tftp_transfer(fd, hostname, direction):
                         bytes_sent = s.sendto(current_packet, recv_addr)
                         flag = 1
                         while(flag == 1):
-                            print("try")
+                            print("try 4")
                             try:
                 
                                 recv = s.recvfrom(100)
                                 flag = 0
-                            except s.sockettimeout:
+                            except:
                                 print("timeoutexception")
                                 flag = 1
                         if handle_error(recv):
