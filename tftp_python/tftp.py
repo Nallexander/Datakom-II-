@@ -14,7 +14,7 @@ MODE_NETASCII= "netascii"
 MODE_OCTET=    "octet"
 MODE_MAIL=     "mail"
 
-TFTP_PORT=20069
+TFTP_PORT=6969
 
 # Timeout in seconds
 TFTP_TIMEOUT= 2
@@ -81,6 +81,12 @@ def parse_packet(msg):
         return opcode, error_code, error_message
     return None
 
+def handle_error(parsed_pack):
+    if parsed_pack[1] == OPCODE_ERR:
+        print(ERROR_CODES[parsed_pack[3]])
+        return True
+    return False
+
 def tftp_transfer(fd, hostname, direction):
     #fd = file descriptor
     # Implement this function
@@ -101,8 +107,10 @@ def tftp_transfer(fd, hostname, direction):
             #receive
             rreq = make_packet_rrq(filename, MODE_OCTET)
             bytes_sent = s.sendto(rreq, (hostname, TFTP_PORT))
-            print('rreq sent')
+            # print('rreq sent')
             recv = s.recvfrom(BLOCK_SIZE+4)
+            if handle_error(recv):
+                return()
             recv_pack = recv[0]
             recv_addr = recv[1]
             
@@ -119,6 +127,8 @@ def tftp_transfer(fd, hostname, direction):
             
             while current_msg_size >= BLOCK_SIZE:
                 recv = s.recvfrom(BLOCK_SIZE+4)
+                if handle_error(recv):
+                    return()
                 recv_pack = recv[0]
                 recv_block = recv[1]
                 parsed_pack = parse_packet(recv_pack)
@@ -127,7 +137,7 @@ def tftp_transfer(fd, hostname, direction):
                     #Send ack again
                     ack = make_packet_ack(parsed_pack[1])
                     bytes_sent = s.sendto(ack, recv_addr)
-                    print('fail')
+                    # print('fail')
                     True
                 else:
                     #Add msg and block 
@@ -147,10 +157,16 @@ def tftp_transfer(fd, hostname, direction):
             fd.write(msg)
 
         elif direction == TFTP_PUT:
+
             wreq = make_packet_wrq(filename, MODE_OCTET)
             bytes_sent = s.sendto(wreq, (hostname, TFTP_PORT))
             recv = s.recvfrom(100)
+            
+            
+            if handle_error(recv[0]):
+                return()
             recv_addr = recv[1]
+
             parsed_recv = parse_packet(recv[0])
             if parsed_recv[0] == OPCODE_ACK:
                 block_ack = parsed_recv[1]
@@ -164,6 +180,8 @@ def tftp_transfer(fd, hostname, direction):
                         bytes_sent = s.sendto(current_packet, recv_addr)
                         block_sent = block_ack+1
                         recv = s.recvfrom(100)
+                        if handle_error(recv):
+                            return()
                         recv_parsed = parse_packet(recv[0])
                         if recv_parsed[0] == OPCODE_ACK:
                             block_ack = recv_parsed[1]
@@ -173,6 +191,8 @@ def tftp_transfer(fd, hostname, direction):
                             print('packet loss')
                             bytes_sent = s.sendto(current_packet, recv_addr)
                             recv = s.recvfrom(100)
+                            if handle_error(recv):
+                                return()
                             recv_parsed = parse_packet(recv[0])
                             block_ack = recv_parsed[1]
                     
