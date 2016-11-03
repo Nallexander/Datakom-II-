@@ -14,7 +14,7 @@ MODE_NETASCII= "netascii"
 MODE_OCTET=    "octet"
 MODE_MAIL=     "mail"
 
-TFTP_PORT= 13069
+TFTP_PORT=20069
 
 # Timeout in seconds
 TFTP_TIMEOUT= 2
@@ -95,13 +95,13 @@ def tftp_transfer(fd, hostname, direction):
     filename = fd.name
 
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+
     try:
         if direction == TFTP_GET:
             #receive
             rreq = make_packet_rrq(filename, MODE_OCTET)
             bytes_sent = s.sendto(rreq, (hostname, TFTP_PORT))
             print('rreq sent')
-            
             recv = s.recvfrom(BLOCK_SIZE+4)
             recv_pack = recv[0]
             recv_addr = recv[1]
@@ -115,6 +115,7 @@ def tftp_transfer(fd, hostname, direction):
             ack = make_packet_ack(parsed_pack[1])
             bytes_sent = s.sendto(ack, recv_addr)
             current_msg_size = len(parsed_pack[2])
+            
             
             while current_msg_size >= BLOCK_SIZE:
                 recv = s.recvfrom(BLOCK_SIZE+4)
@@ -156,7 +157,7 @@ def tftp_transfer(fd, hostname, direction):
                 block_sent = 0
                 current_msg = "start"
                 while len(current_msg) != 0:
-                    print(current_msg)
+                    print('Sending block nr: %d'% (block_sent +1))
                     current_msg = fd.read(512)
                     if len(current_msg) != 0:
                         current_packet = make_packet_data(block_ack+1, current_msg)
@@ -169,6 +170,7 @@ def tftp_transfer(fd, hostname, direction):
                         elif recv_parsed[0] == OPCODE_ERR:
                             print('fail')
                         while block_sent != block_ack:
+                            print('packet loss')
                             bytes_sent = s.sendto(current_packet, recv_addr)
                             recv = s.recvfrom(100)
                             recv_parsed = parse_packet(recv[0])
