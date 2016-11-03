@@ -14,7 +14,7 @@ MODE_NETASCII= "netascii"
 MODE_OCTET=    "octet"
 MODE_MAIL=     "mail"
 
-TFTP_PORT=6969
+TFTP_PORT=10069
 
 # Timeout in seconds
 TFTP_TIMEOUT= 2
@@ -31,6 +31,9 @@ ERROR_CODES = ["Undef",
 # Internal defines
 TFTP_GET = 1
 TFTP_PUT = 2
+
+# Debug mode
+DEBUG = True
 
 
 def make_packet_rrq(filename, mode):
@@ -102,107 +105,113 @@ def tftp_transfer(fd, hostname, direction):
 
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
-    try:
-        if direction == TFTP_GET:
-            #receive
-            rreq = make_packet_rrq(filename, MODE_OCTET)
-            bytes_sent = s.sendto(rreq, (hostname, TFTP_PORT))
-            # print('rreq sent')
+    
+
+
+    
+    if direction == TFTP_GET:
+        #receive
+        rreq = make_packet_rrq(filename, MODE_OCTET)
+        bytes_sent = s.sendto(rreq, (hostname, TFTP_PORT))
+        # print('rreq sent')
+        recv = s.recvfrom(BLOCK_SIZE+4)
+        if handle_error(recv):
+            return()
+        recv_pack = recv[0]
+        recv_addr = recv[1]
+        
+        parsed_pack = parse_packet(recv_pack)
+        pack_block = parsed_pack[1]
+
+        current_block = pack_block
+        msg = parsed_pack[2]
+        
+        ack = make_packet_ack(parsed_pack[1])
+        bytes_sent = s.sendto(ack, recv_addr)
+        current_msg_size = len(parsed_pack[2])
+        
+        
+        while current_msg_size >= BLOCK_SIZE:
             recv = s.recvfrom(BLOCK_SIZE+4)
             if handle_error(recv):
                 return()
             recv_pack = recv[0]
-            recv_addr = recv[1]
-            
+            recv_block = recv[1]
             parsed_pack = parse_packet(recv_pack)
             pack_block = parsed_pack[1]
-
-            current_block = pack_block
-            msg = parsed_pack[2]
-            
-            ack = make_packet_ack(parsed_pack[1])
-            bytes_sent = s.sendto(ack, recv_addr)
-            current_msg_size = len(parsed_pack[2])
-            
-            
-            while current_msg_size >= BLOCK_SIZE:
-                recv = s.recvfrom(BLOCK_SIZE+4)
-                if handle_error(recv):
-                    return()
-                recv_pack = recv[0]
-                recv_block = recv[1]
-                parsed_pack = parse_packet(recv_pack)
-                pack_block = parsed_pack[1]
-                if pack_block == current_block:
-                    #Send ack again
-                    ack = make_packet_ack(parsed_pack[1])
-                    bytes_sent = s.sendto(ack, recv_addr)
-                    # print('fail')
-                    True
-                else:
-                    #Add msg and block 
-                    current_block = pack_block
-                    pack_msg = parsed_pack[2]
-                    msg = msg + pack_msg
-                    ack = make_packet_ack(parsed_pack[1])
-                    bytes_sent = s.sendto(ack, recv_addr)
-                    current_msg_size = len(parsed_pack[2])
-                    #Send new ack
+            if pack_block == current_block:
+                #Send ack again
+                ack = make_packet_ack(parsed_pack[1])
+                bytes_sent = s.sendto(ack, recv_addr)
+                if DEBUG:
+                    print('Resend ack')
+                True
+            else:
+                #Add msg and block 
+                current_block = pack_block
+                pack_msg = parsed_pack[2]
+                msg = msg + pack_msg
+                ack = make_packet_ack(parsed_pack[1])
+                bytes_sent = s.sendto(ack, recv_addr)
+                current_msg_size = len(parsed_pack[2])
+                #Send new ack
 
 
-
+            if DEBUG:
                 print("Getting block: %d"% (current_block))
 
 
-            fd.write(msg)
+        fd.write(msg)
 
-        elif direction == TFTP_PUT:
+    elif direction == TFTP_PUT:
 
-            wreq = make_packet_wrq(filename, MODE_OCTET)
-            bytes_sent = s.sendto(wreq, (hostname, TFTP_PORT))
-            recv = s.recvfrom(100)
-            
-            
-            if handle_error(recv[0]):
-                return()
-            recv_addr = recv[1]
+        wreq = make_packet_wrq(filename, MODE_OCTET)
+        bytes_sent = s.sendto(wreq, (hostname, TFTP_PORT))
+        recv = s.recvfrom(100)
+        
+        
+        if handle_error(recv[0]):
+            return()
+        recv_addr = recv[1]
 
-            parsed_recv = parse_packet(recv[0])
-            if parsed_recv[0] == OPCODE_ACK:
-                block_ack = parsed_recv[1]
-                block_sent = 0
-                current_msg = "start"
-                while len(current_msg) != 0:
+        parsed_recv = parse_packet(recv[0])
+        if parsed_recv[0] == OPCODE_ACK:
+            block_ack = parsed_recv[1]
+            block_sent = 0
+            current_msg = "start"
+            while len(current_msg) != 0:
+                if DEBUG:
                     print('Sending block nr: %d'% (block_sent +1))
-                    current_msg = fd.read(512)
-                    if len(current_msg) != 0:
-                        current_packet = make_packet_data(block_ack+1, current_msg)
+                current_msg = fd.read(512)
+                if len(current_msg) != 0:
+                    current_packet = make_packet_data(block_ack+1, current_msg)
+                    bytes_sent = s.sendto(current_packet, recv_addr)
+                    block_sent = block_ack+1
+                    recv = s.recvfrom(100)
+                    if handle_error(recv):
+                        return()
+                    recv_parsed = parse_packet(recv[0])
+                    if recv_parsed[0] == OPCODE_ACK:
+                        block_ack = recv_parsed[1]
+                    elif recv_parsed[0] == OPCODE_ERR:
+                        if DEBUG:
+                            print('fail')
+                    while block_sent != block_ack:
+                        if DEBUG:
+                            print('packet loss')
                         bytes_sent = s.sendto(current_packet, recv_addr)
-                        block_sent = block_ack+1
                         recv = s.recvfrom(100)
                         if handle_error(recv):
                             return()
                         recv_parsed = parse_packet(recv[0])
-                        if recv_parsed[0] == OPCODE_ACK:
-                            block_ack = recv_parsed[1]
-                        elif recv_parsed[0] == OPCODE_ERR:
-                            print('fail')
-                        while block_sent != block_ack:
-                            print('packet loss')
-                            bytes_sent = s.sendto(current_packet, recv_addr)
-                            recv = s.recvfrom(100)
-                            if handle_error(recv):
-                                return()
-                            recv_parsed = parse_packet(recv[0])
-                            block_ack = recv_parsed[1]
-                    
+                        block_ack = recv_parsed[1]
+                
 
 
-            return ""
-            #send
+        return ""
+        #send
 
-    except socket.error as e:
-        print("Error: " + e.strerror)
+    
 
 
     # while True:
