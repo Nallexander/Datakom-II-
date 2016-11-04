@@ -17,7 +17,7 @@ MODE_MAIL=     "mail"
 TFTP_PORT=6969
 
 # Timeout in seconds
-TFTP_TIMEOUT= 0.1
+TFTP_TIMEOUT= 2
 
 ERROR_CODES = ["Undef",
                "File not found",
@@ -150,6 +150,7 @@ def tftp_transfer(fd, hostname, direction):
                 try:
                     if DEBUG:
                         print('before recv')
+                    bytes_sent = s.sendto(ack, recv_addr)    
                     recv = s.recvfrom(BLOCK_SIZE+4)
                     if DEBUG:
                         print('after recv')
