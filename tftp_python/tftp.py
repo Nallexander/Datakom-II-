@@ -143,6 +143,7 @@ def tftp_transfer(fd, hostname, direction):
         
         while current_msg_size >= BLOCK_SIZE:
             aflag = 1
+            aint =0
             while(aflag == 1):
                 if DEBUG:
                     print("try 2")
@@ -155,7 +156,8 @@ def tftp_transfer(fd, hostname, direction):
                     aflag = 0
                 except socket.timeout:
                     if DEBUG:
-                        print("timeoutexception 2")
+                        aint = aint+1;
+                        print("timeoutexception2 %d" % (aint))
                     aflag = 1
             if handle_error(recv):
                 return()
