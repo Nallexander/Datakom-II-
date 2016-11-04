@@ -110,14 +110,14 @@ def tftp_transfer(fd, hostname, direction):
     if direction == TFTP_GET:
         #receive
         rreq = make_packet_rrq(filename, MODE_OCTET)
-        bytes_sent = s.sendto(rreq, (hostname, TFTP_PORT))
+        
         # print('rreq sent')
         flag = 1
         while(flag == 1):
             if DEBUG:
                 print("try 1")
             try:
-                
+                bytes_sent = s.sendto(rreq, (hostname, TFTP_PORT))
                 recv = s.recvfrom(BLOCK_SIZE+4)
                 flag = 0
             except socket.timeout:
@@ -195,13 +195,13 @@ def tftp_transfer(fd, hostname, direction):
     elif direction == TFTP_PUT:
 
         wreq = make_packet_wrq(filename, MODE_OCTET)
-        bytes_sent = s.sendto(wreq, (hostname, TFTP_PORT))
+       
         flag = 1
         while(flag == 1):
             if DEBUG:
                 print("try 3")
             try:
-                
+                bytes_sent = s.sendto(wreq, (hostname, TFTP_PORT))
                 recv = s.recvfrom(100)
                 flag = 0
             except socket.timeout:
@@ -226,14 +226,14 @@ def tftp_transfer(fd, hostname, direction):
                 current_msg = fd.read(512)
                 if len(current_msg) != 0:
                     current_packet = make_packet_data(block_ack+1, current_msg)
-                    bytes_sent = s.sendto(current_packet, recv_addr)
+                   
                     block_sent = block_ack+1
                     flag = 1
                     while(flag == 1):
                         if DEBUG:
                             print("try 4")
                         try:
-                
+                            bytes_sent = s.sendto(current_packet, recv_addr)
                             recv = s.recvfrom(100)
                             flag = 0
                         except socket.timeout:
@@ -252,13 +252,13 @@ def tftp_transfer(fd, hostname, direction):
                     while block_sent != block_ack:
                         if DEBUG:
                             print('packet loss')
-                        bytes_sent = s.sendto(current_packet, recv_addr)
+                        
                         flag = 1
                         while(flag == 1):
                             if DEBUG:
                                 print("try 5")
                             try:
-                
+                                bytes_sent = s.sendto(current_packet, recv_addr)
                                 recv = s.recvfrom(100)
                                 flag = 0
                             except socket.timeout:
