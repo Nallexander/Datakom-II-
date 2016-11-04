@@ -14,7 +14,7 @@ MODE_NETASCII= "netascii"
 MODE_OCTET=    "octet"
 MODE_MAIL=     "mail"
 
-TFTP_PORT=69
+TFTP_PORT=13069
 
 # Timeout in seconds
 TFTP_TIMEOUT= 1
@@ -85,8 +85,9 @@ def parse_packet(msg):
     return None
 
 def handle_error(parsed_pack):
-    if parsed_pack[1] == OPCODE_ERR:
-        print(ERROR_CODES[parsed_pack[3]])
+    parsed_pack = parse_packet(parsed_pack[0])
+    if parsed_pack[0] == OPCODE_ERR:
+        print('Error: ' + ERROR_CODES[parsed_pack[1]])
         return True
     return False
 
@@ -104,10 +105,7 @@ def tftp_transfer(fd, hostname, direction):
     filename = fd.name
 
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-
-    
-
-
+    s.settimeout(TFTP_TIMEOUT)
     
     if direction == TFTP_GET:
         #receive
@@ -143,9 +141,12 @@ def tftp_transfer(fd, hostname, direction):
         while current_msg_size >= BLOCK_SIZE:
             flag = 1
             while(flag == 1):
-                print("try 2")
+                if DEBUG:
+                    print("try 2")
                 try:
+                    print('before recv')
                     recv = s.recvfrom(BLOCK_SIZE+4)
+                    print('after recv')
                     flag = 0
                 except socket.timeout:
                     print("timeoutexception")
