@@ -137,7 +137,7 @@ def tftp_transfer(fd, hostname, direction):
         msg = parsed_pack[2]
         
         ack = make_packet_ack(parsed_pack[1])
-        bytes_sent = s.sendto(ack, recv_addr)
+        #bytes_sent = s.sendto(ack, recv_addr)
         current_msg_size = len(parsed_pack[2])
         
         
