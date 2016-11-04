@@ -105,7 +105,7 @@ def tftp_transfer(fd, hostname, direction):
     filename = fd.name
 
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-   
+    s.settimeout(TFTP_TIMEOUT)
     
     if direction == TFTP_GET:
         #receive
@@ -117,9 +117,8 @@ def tftp_transfer(fd, hostname, direction):
             if DEBUG:
                 print("try 1")
             try:
-                s.settimeout(TFTP_TIMEOUT)
+                
                 recv = s.recvfrom(BLOCK_SIZE+4)
-                s.settimeout(None)
                 flag = 0
             except socket.timeout:
                 if DEBUG:
@@ -150,9 +149,7 @@ def tftp_transfer(fd, hostname, direction):
                 try:
                     if DEBUG:
                         print('before recv')
-                    s.settimeout(TFTP_TIMEOUT)
                     recv = s.recvfrom(BLOCK_SIZE+4)
-                    s.settimeout(None)
                     if DEBUG:
                         print('after recv')
                     flag = 0
