@@ -211,7 +211,7 @@ def tftp_transfer(fd, hostname, direction):
        
         
         
-        if handle_error(recv[0]):
+        if handle_error(recv):
             return()
         recv_addr = recv[1]
 
