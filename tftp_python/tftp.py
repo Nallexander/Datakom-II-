@@ -159,6 +159,8 @@ def tftp_transfer(fd, hostname, direction):
                         aint = aint+1;
                         print("timeoutexception2 %d" % (aint))
                     aflag = 1
+                    if DEBUG:
+                        print("flag2 %d" % (aflag))
             if handle_error(recv):
                 return()
             recv_pack = recv[0]
