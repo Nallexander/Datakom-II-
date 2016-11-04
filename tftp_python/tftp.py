@@ -14,7 +14,7 @@ MODE_NETASCII= "netascii"
 MODE_OCTET=    "octet"
 MODE_MAIL=     "mail"
 
-TFTP_PORT=13069
+TFTP_PORT=6969
 
 # Timeout in seconds
 TFTP_TIMEOUT= 1
@@ -114,12 +114,14 @@ def tftp_transfer(fd, hostname, direction):
         # print('rreq sent')
         flag = 1
         while(flag == 1):
-            print("try 1")
+            if DEBUG:
+                print("try 1")
             try:
                 recv = s.recvfrom(BLOCK_SIZE+4)
                 flag = 0
             except socket.timeout:
-                print("timeoutexception")
+                if DEBUG:
+                    print("timeoutexception 1")
                 flag = 1
        
         if handle_error(recv):
@@ -144,12 +146,15 @@ def tftp_transfer(fd, hostname, direction):
                 if DEBUG:
                     print("try 2")
                 try:
-                    print('before recv')
+                    if DEBUG:
+                        print('before recv')
                     recv = s.recvfrom(BLOCK_SIZE+4)
-                    print('after recv')
+                    if DEBUG:
+                        print('after recv')
                     flag = 0
                 except socket.timeout:
-                    print("timeoutexception")
+                    if DEBUG:
+                        print("timeoutexception 2")
                     flag = 1
             if handle_error(recv):
                 return()
@@ -187,12 +192,15 @@ def tftp_transfer(fd, hostname, direction):
         bytes_sent = s.sendto(wreq, (hostname, TFTP_PORT))
         flag = 1
         while(flag == 1):
-            print("try 3")
+            if DEBUG:
+                print("try 3")
             try:
                 
                 recv = s.recvfrom(100)
                 flag = 0
             except socket.timeout:
+                if DEBUG:
+                    print("timeoutexception 3")
                 flag = 1
        
         
@@ -216,13 +224,15 @@ def tftp_transfer(fd, hostname, direction):
                     block_sent = block_ack+1
                     flag = 1
                     while(flag == 1):
-                        print("try")
+                        if DEBUG:
+                            print("try 4")
                         try:
                 
                             recv = s.recvfrom(100)
                             flag = 0
-                        except:
-                            print("timeoutexception")
+                        except socket.timeout:
+                            if DEBUG:
+                                print("timeoutexception 4")
                             flag = 1
                     
                     if handle_error(recv):
@@ -239,13 +249,15 @@ def tftp_transfer(fd, hostname, direction):
                         bytes_sent = s.sendto(current_packet, recv_addr)
                         flag = 1
                         while(flag == 1):
-                            print("try 4")
+                            if DEBUG:
+                                print("try 5")
                             try:
                 
                                 recv = s.recvfrom(100)
                                 flag = 0
-                            except:
-                                print("timeoutexception")
+                            except socket.timeout:
+                                if DEBUG:
+                                    print("timeoutexception 5")
                                 flag = 1
                         if handle_error(recv):
                             return()
