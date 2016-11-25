@@ -16,6 +16,8 @@
 # - A TCP flow form n0 to n2
 # - A TCP flow from n1 to n3
 
+#TCP time log: NS_LOG="*=prefix_time" python sim-tcp.py --latency=1
+
 import sys
 import ns.applications
 import ns.core
@@ -49,7 +51,8 @@ import ns.flow_monitor
 #ns.core.LogComponentEnable("OnOffApplication", ns.core.LOG_LEVEL_INFO)
 #ns.core.LogComponentEnable("TcpWestwood", ns.core.LOG_LEVEL_LOGIC)
 #ns.core.LogComponentEnable("TcpTahoe", ns.core.LOG_LEVEL_LOGIC)
-#ns.core.LogComponentEnable("TcpNewReno", ns.core.LOG_LEVEL_LOGIC)
+ns.core.LogComponentEnable("TcpCongestionOps", ns.core.LOG_LEVEL_INFO)
+
 
 
 
@@ -94,8 +97,8 @@ nodes.Create(6)
 
 # Set the default queue length to 5 packets (used by NetDevices)
 # The first line is for older ns3 versions and the second for new versions.
-ns.core.Config.SetDefault("ns3::DropTailQueue::MaxPackets", ns.core.UintegerValue(5))
-#ns.core.Config.SetDefault("ns3::Queue::MaxPackets", ns.core.UintegerValue(5))
+#ns.core.Config.SetDefault("ns3::DropTailQueue::MaxPackets", ns.core.UintegerValue(5))
+ns.core.Config.SetDefault("ns3::Queue::MaxPackets", ns.core.UintegerValue(5))
 
 
 # To connect the point-to-point channels, we need to define NodeContainers for all the
@@ -161,8 +164,8 @@ ns.core.Config.SetDefault("ns3::TcpSocket::SegmentSize", ns.core.UintegerValue(1
 
 # Some examples of attributes for some of the TCP versions.
 #ns.core.Config.SetDefault("ns3::TcpNewReno::ReTxThreshold", ns.core.UintegerValue(4))
-ns.core.Config.SetDefault("ns3::TcpWestwood::ProtocolType",
-                          ns.core.StringValue("WestwoodPlus"))
+#ns.core.Config.SetDefault("ns3::TcpWestwood::ProtocolType",
+#                          ns.core.StringValue("WestwoodPlus"))
 
 
 #######################################################################################
@@ -216,18 +219,24 @@ ns.internet.Ipv4GlobalRoutingHelper.PopulateRoutingTables()
 # Create a TCP client at node N0 and a TCP sink at node N2 using an On-Off application.
 # An On-Off application alternates between on and off modes. In on mode, packets are
 # generated according to DataRate, PacketSize. In off mode, no packets are transmitted.
+# protocol = "UDP" / "TCP"  
 
-def SetupTcpConnection(srcNode, dstNode, dstAddr, startTime, stopTime):
+def SetupConnection(srcNode, dstNode, dstAddr, startTime, stopTime, protocol):
+
+  if (protocol == "UDP"):
+    socketFactory = "ns3::UdpSocketFactory"
+  else:
+    socketFactory = "ns3::TcpSocketFactory"
   # Create a TCP sink at dstNode
-  packet_sink_helper = ns.applications.PacketSinkHelper("ns3::TcpSocketFactory", 
+  packet_sink_helper = ns.applications.PacketSinkHelper(socketFactory, 
                           ns.network.InetSocketAddress(ns.network.Ipv4Address.GetAny(), 
                                                        8080))
   sink_apps = packet_sink_helper.Install(dstNode)
-  sink_apps.Start(ns.core.Seconds(2.0))
+  sink_apps.Start(ns.core.Seconds(1.0))
   sink_apps.Stop(ns.core.Seconds(50.0)) 
 
   # Create TCP connection from srcNode to dstNode 
-  on_off_tcp_helper = ns.applications.OnOffHelper("ns3::TcpSocketFactory", 
+  on_off_tcp_helper = ns.applications.OnOffHelper(socketFactory, 
                           ns.network.Address(ns.network.InetSocketAddress(dstAddr, 8080)))
   on_off_tcp_helper.SetAttribute("DataRate",
                       ns.network.DataRateValue(ns.network.DataRate(int(cmd.on_off_rate))))
@@ -242,13 +251,15 @@ def SetupTcpConnection(srcNode, dstNode, dstAddr, startTime, stopTime):
   # Install the client on node srcNode
   client_apps = on_off_tcp_helper.Install(srcNode)
   client_apps.Start(startTime)
-  client_apps.Stop(stopTime) 
+  client_apps.Stop(stopTime)
 
 
-SetupTcpConnection(nodes.Get(0), nodes.Get(2), if2if5.GetAddress(0),
-                   ns.core.Seconds(2.0), ns.core.Seconds(40.0))
-SetupTcpConnection(nodes.Get(1), nodes.Get(3), if3if5.GetAddress(0),
-                   ns.core.Seconds(20.0), ns.core.Seconds(40.0))
+SetupConnection(nodes.Get(0), nodes.Get(2), if2if5.GetAddress(0),
+                   ns.core.Seconds(1.0), ns.core.Seconds(40.0), "TCP")
+#SetupTcpConnection(nodes.Get(1), nodes.Get(3), if3if5.GetAddress(0),
+#                   ns.core.Seconds(20.0), ns.core.Seconds(40.0))
+SetupConnection(nodes.Get(1), nodes.Get(3), if3if5.GetAddress(0),
+                   ns.core.Seconds(20.0), ns.core.Seconds(40.0), "UDP")
 
 
 #######################################################################################
@@ -261,8 +272,9 @@ SetupTcpConnection(nodes.Get(1), nodes.Get(3), if3if5.GetAddress(0),
 #
 # You will get two files, one for node 0 and one for node 1
 
-pointToPoint.EnablePcap("sim-tcp", d0d4.Get(0), True)
-pointToPoint.EnablePcap("sim-tcp", d1d4.Get(0), True)
+pointToPoint.EnablePcap("d0d4", d0d4.Get(0), True)
+pointToPoint.EnablePcap("d1d4", d1d4.Get(0), True)
+pointToPoint.EnablePcap("d4d5", d4d5.Get(0), True)
 
 
 #######################################################################################
