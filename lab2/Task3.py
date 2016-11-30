@@ -275,6 +275,26 @@ address = ns.internet.Ipv4AddressHelper()
 #if0if4 = address.Assign(d_sr0)
 
 '''
+router edges
+address.SetBase(ns.network.Ipv4Address("11.0.0.0"), ns.network.Ipv4Mask("255.255.255.0"))
+ifsifr0 = address.Assign(d_sr0)
+
+address.SetBase(ns.network.Ipv4Address("12.0.0.0"), ns.network.Ipv4Mask("255.255.255.0"))
+ifsifr1 = address.Assign(d_sr1)
+
+address.SetBase(ns.network.Ipv4Address("12.1.0.0"), ns.network.Ipv4Mask("255.255.255.0"))
+ifr1ifr2= address.Assign(d_r1r2)
+
+address.SetBase(ns.network.Ipv4Address("12.2.0.0"), ns.network.Ipv4Mask("255.255.255.0"))
+ifr1ifr3= address.Assign(d_r1r3)
+
+address.SetBase(ns.network.Ipv4Address("12.2.1.0"), ns.network.Ipv4Mask("255.255.255.0"))
+ifr3ifr4= address.Assign(d_r3r4)
+'''
+
+
+
+'''
 address.SetBase(ns.network.Ipv4Address("10.1.1.0"), ns.network.Ipv4Mask("255.255.255.0"))
 if0if4 = address.Assign(d0d4)
 
