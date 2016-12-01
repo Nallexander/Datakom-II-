@@ -18,6 +18,7 @@ TFTP_PORT=6969
 
 # Timeout in seconds
 TFTP_TIMEOUT= 2
+MAX_TRIES = 10
 
 ERROR_CODES = ["Undef",
                "File not found",
@@ -40,7 +41,7 @@ def make_packet_rrq(filename, mode):
     # Note the exclamation mark in the format string to pack(). What is it for?
     s = filename + '\0' + mode + '\0'
     return struct.pack("!H", OPCODE_RRQ) + s.encode('ascii')
-    # return struct.pack("!HsHsH", OPCODE_RRQ, bytes(filename, 'utf-8'), 0, bytes(mode, 'utf-8'), 0)
+# return struct.pack("!HsHsH", OPCODE_RRQ, bytes(filename, 'utf-8'), 0, bytes(mode, 'utf-8'), 0)
 
 def make_packet_wrq(filename, mode):
     s = filename + '\0' + mode + '\0'
@@ -84,12 +85,19 @@ def parse_packet(msg):
         return opcode, error_code, error_message
     return None
 
-def handle_error(parsed_pack):
+def handle_error(parsed_pack, opcode):
     parsed_pack = parse_packet(parsed_pack[0])
-    if parsed_pack[0] == OPCODE_ERR:
-        print('Error: ' + ERROR_CODES[parsed_pack[1]])
+    if parsed_pack[0] != opcode:
+        if parsed_pack[0] == OPCODE_ERROR:
+            print('Error: ' + ERROR_CODES[parsed_pack[1]])
+        else:
+            print('Error: Unespected opcode')
         return True
     return False
+def print_debug(message):
+    if(DEBUG):
+        print(message)
+    return()
 
 def tftp_transfer(fd, hostname, direction):
     #fd = file descriptor
@@ -103,7 +111,7 @@ def tftp_transfer(fd, hostname, direction):
     # Put or get the file, block by block, in a loop.
 
     filename = fd.name
-
+    
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     s.settimeout(TFTP_TIMEOUT)
     
@@ -112,20 +120,18 @@ def tftp_transfer(fd, hostname, direction):
         rreq = make_packet_rrq(filename, MODE_OCTET)
         
         # print('rreq sent')
-        flag = 1
-        while(flag == 1):
-            if DEBUG:
-                print("try 1")
+        tries =0
+        while(tries < 10):
+            print_debug("try 1")
             try:
                 bytes_sent = s.sendto(rreq, (hostname, TFTP_PORT))
                 recv = s.recvfrom(BLOCK_SIZE+4)
-                flag = 0
+                break
             except socket.timeout:
-                if DEBUG:
-                    print("timeoutexception 1")
-                flag = 1
-       
-        if handle_error(recv):
+                print_debug("timeoutexception 1")
+                tries = tries +1
+                
+        if handle_error(recv, OPCODE_DATA): #handle unesoected opcode
             return()
         recv_pack = recv[0]
         recv_addr = recv[1]
@@ -142,27 +148,24 @@ def tftp_transfer(fd, hostname, direction):
         
         
         while current_msg_size >= BLOCK_SIZE:
-            aflag = 1
+            atries = 1
             aint =0
-            while(aflag == 1):
-                if DEBUG:
-                    print("try 2")
+            while(atries == 1):
+                print_debug("try2")
                 try:
-                    if DEBUG:
-                        print('before recv')
+                    print_debug("before recv")
                     bytes_sent = s.sendto(ack, recv_addr)    
                     recv = s.recvfrom(BLOCK_SIZE+4)
-                    if DEBUG:
-                        print('after recv')
-                    aflag = 0
+                    print_debug("after recv")
+                    atries = 0
                 except socket.timeout:
                     if DEBUG:
                         aint = aint+1;
                         print("timeoutexception2 %d" % (aint))
-                    aflag = 1
+                        atries = 1
                     if DEBUG:
-                        print("flag2 %d" % (aflag))
-            if handle_error(recv):
+                        print("tries2 %d" % (atries))
+            if handle_error(recv, OPCODE_DATA): ## handle unespected opcode
                 return()
             recv_pack = recv[0]
             recv_block = recv[1]
@@ -172,14 +175,13 @@ def tftp_transfer(fd, hostname, direction):
                 #Send ack again
                 ack = make_packet_ack(parsed_pack[1])
                 bytes_sent = s.sendto(ack, recv_addr)
-                if DEBUG:
-                    print('Resend ack')
+                print_debug("Resend ack")
                 True
             else:
                 #Add msg and block 
                 current_block = pack_block
-                pack_msg = parsed_pack[2]
-                msg = msg + pack_msg
+                fd.write( msg + parsed_pack[2])
+                msg ="";
                 ack = make_packet_ack(parsed_pack[1])
                 bytes_sent = s.sendto(ack, recv_addr)
                 current_msg_size = len(parsed_pack[2])
@@ -190,99 +192,93 @@ def tftp_transfer(fd, hostname, direction):
                 print("Getting block: %d"% (current_block))
 
 
-        fd.write(msg)
+        
 
     elif direction == TFTP_PUT:
 
         wreq = make_packet_wrq(filename, MODE_OCTET)
-       
-        flag = 1
-        while(flag == 1):
-            if DEBUG:
-                print("try 3")
+        
+        tries = 0
+        while(tries < MAX_TRIES):
+            print_debug("try 3")
             try:
                 bytes_sent = s.sendto(wreq, (hostname, TFTP_PORT))
                 recv = s.recvfrom(100)
-                flag = 0
+                break
             except socket.timeout:
-                if DEBUG:
-                    print("timeoutexception 3")
-                flag = 1
-       
+                print_debug("timeoutexception 3")
+                tries += 1
+                
         
+        if tries == MAX_TRIES:
+
+            raise ValueError('Maximum tries exceeded, the server does not respond')
         
-        if handle_error(recv):
+        if handle_error(recv,OPCODE_ACK): ## handles unespected opcode
             return()
         recv_addr = recv[1]
 
         parsed_recv = parse_packet(recv[0])
-        if parsed_recv[0] == OPCODE_ACK:
-            block_ack = parsed_recv[1]
-            block_sent = 0
-            current_msg = "start"
+        block_ack = parsed_recv[1]
+        block_sent = 0
+        current_msg = "start"
             while len(current_msg) != 0:
                 if DEBUG:
                     print('Sending block nr: %d'% (block_sent +1))
-                current_msg = fd.read(512)
+                    current_msg = fd.read(BLOCK_SIZE)
                 if len(current_msg) != 0:
                     current_packet = make_packet_data(block_ack+1, current_msg)
-                   
+                    
                     block_sent = block_ack+1
-                    flag = 1
-                    while(flag == 1):
-                        if DEBUG:
-                            print("try 4")
+                    tries = 0
+                    while(tries < MAX_TRIES):
+                        print_debug("try 4")
                         try:
                             bytes_sent = s.sendto(current_packet, recv_addr)
                             recv = s.recvfrom(100)
-                            flag = 0
+                            break
                         except socket.timeout:
-                            if DEBUG:
-                                print("timeoutexception 4")
-                            flag = 1
-                    
-                    if handle_error(recv):
+                            print_debug("timeoutexception 4")
+                            tries += 1
+                            
+                    if handle_error(recv,OPCODE_ACK): ## handles unexpected opcode
                         return()
                     recv_parsed = parse_packet(recv[0])
                     if recv_parsed[0] == OPCODE_ACK:
                         block_ack = recv_parsed[1]
                     elif recv_parsed[0] == OPCODE_ERR:
-                        if DEBUG:
-                            print('fail')
+                        print_debug("fail")
                     while block_sent != block_ack:
-                        if DEBUG:
-                            print('packet loss')
+                        print_debug("packet loss")
                         
-                        flag = 1
-                        while(flag == 1):
-                            if DEBUG:
-                                print("try 5")
+                        tries = 0
+                        while(tries < MAX_TRIES):
+                            print_debug("try 5")
                             try:
                                 bytes_sent = s.sendto(current_packet, recv_addr)
                                 recv = s.recvfrom(100)
-                                flag = 0
+                                break
                             except socket.timeout:
-                                if DEBUG:
-                                    print("timeoutexception 5")
-                                flag = 1
+                                print_debug("timeoutexception 5")
+                                tries += 1
                         if handle_error(recv):
                             return()
                         recv_parsed = parse_packet(recv[0])
                         block_ack = recv_parsed[1]
-                
+                        
 
 
         return ""
-        #send
+    #send
 
     
 
 
     # while True:
-        # Wait for packet, write the data to the filedescriptor or
-        # read the next block from the file. Send new packet to server.
-        # Don't forget to deal with timeouts and received error packets.
-        # pass
+    # Wait for packet, write the data to the filedescriptor or
+    # read the next block from the file. Send new packet to server.
+    # Don't forget to deal with timeouts and received error packets.
+    # pass
 
 
 def usage():
@@ -339,7 +335,11 @@ def main():
     except IOError as e:
         sys.stderr.write("File error (%s): %s\n" % (filename, e.strerror))
         sys.exit(2)
-
+        tuples = socket.getaddrinfo(hostname,TFTP_PORT)
+        addrinfo = tuples[4]
+        hostname = addrinfo[0]
+        TFTP_PORT = addrinfo[1]
+        
     tftp_transfer(fd, hostname, direction)
     fd.close()
 
