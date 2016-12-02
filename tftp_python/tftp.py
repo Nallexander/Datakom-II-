@@ -254,10 +254,10 @@ def tftp_transfer(fd, hostname, direction):
                     tries = 0
                     while(tries < MAX_TRIES):
                             print_debug("try 5")
-                        try:
-                            bytes_sent = s.sendto(current_packet, recv_addr)
-                            recv = s.recvfrom(100)
-                            break
+                            try:
+                                bytes_sent = s.sendto(current_packet, recv_addr)
+                                recv = s.recvfrom(100)
+                                break
                         except socket.timeout:
                             print_debug("timeoutexception 5")
                             tries += 1
