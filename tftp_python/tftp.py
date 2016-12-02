@@ -251,7 +251,7 @@ def tftp_transfer(fd, hostname, direction):
                 while block_sent != block_ack:
                     print_debug("packet loss")
                         
-                        tries = 0
+                    tries = 0
                     while(tries < MAX_TRIES):
                             print_debug("try 5")
                         try:
