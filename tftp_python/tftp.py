@@ -222,49 +222,49 @@ def tftp_transfer(fd, hostname, direction):
         block_ack = parsed_recv[1]
         block_sent = 0
         current_msg = "start"
-            while len(current_msg) != 0:
-                if DEBUG:
-                    print('Sending block nr: %d'% (block_sent +1))
-                    current_msg = fd.read(BLOCK_SIZE)
-                if len(current_msg) != 0:
-                    current_packet = make_packet_data(block_ack+1, current_msg)
+        while len(current_msg) != 0:
+            if DEBUG:
+                print('Sending block nr: %d'% (block_sent +1))
+                current_msg = fd.read(BLOCK_SIZE)
+            if len(current_msg) != 0:
+                current_packet = make_packet_data(block_ack+1, current_msg)
                     
-                    block_sent = block_ack+1
-                    tries = 0
+                block_sent = block_ack+1
+                tries = 0
+                while(tries < MAX_TRIES):
+                    print_debug("try 4")
+                    try:
+                        bytes_sent = s.sendto(current_packet, recv_addr)
+                        recv = s.recvfrom(100)
+                        break
+                    except socket.timeout:
+                        print_debug("timeoutexception 4")
+                        tries += 1
+                            
+                if handle_error(recv,OPCODE_ACK): ## handles unexpected opcode
+                    return()
+                recv_parsed = parse_packet(recv[0])
+                if recv_parsed[0] == OPCODE_ACK:
+                    block_ack = recv_parsed[1]
+                elif recv_parsed[0] == OPCODE_ERR:
+                    print_debug("fail")
+                while block_sent != block_ack:
+                    print_debug("packet loss")
+                        
+                        tries = 0
                     while(tries < MAX_TRIES):
-                        print_debug("try 4")
+                            print_debug("try 5")
                         try:
                             bytes_sent = s.sendto(current_packet, recv_addr)
                             recv = s.recvfrom(100)
                             break
                         except socket.timeout:
-                            print_debug("timeoutexception 4")
+                            print_debug("timeoutexception 5")
                             tries += 1
-                            
-                    if handle_error(recv,OPCODE_ACK): ## handles unexpected opcode
+                    if handle_error(recv):
                         return()
                     recv_parsed = parse_packet(recv[0])
-                    if recv_parsed[0] == OPCODE_ACK:
-                        block_ack = recv_parsed[1]
-                    elif recv_parsed[0] == OPCODE_ERR:
-                        print_debug("fail")
-                    while block_sent != block_ack:
-                        print_debug("packet loss")
-                        
-                        tries = 0
-                        while(tries < MAX_TRIES):
-                            print_debug("try 5")
-                            try:
-                                bytes_sent = s.sendto(current_packet, recv_addr)
-                                recv = s.recvfrom(100)
-                                break
-                            except socket.timeout:
-                                print_debug("timeoutexception 5")
-                                tries += 1
-                        if handle_error(recv):
-                            return()
-                        recv_parsed = parse_packet(recv[0])
-                        block_ack = recv_parsed[1]
+                    block_ack = recv_parsed[1]
                         
 
 
@@ -280,7 +280,7 @@ def tftp_transfer(fd, hostname, direction):
     # Don't forget to deal with timeouts and received error packets.
     # pass
 
-
+    
 def usage():
     """Print the usage on stderr and quit with error code"""
     sys.stderr.write("Usage: %s [-g|-p] FILE HOST\n" % sys.argv[0])
