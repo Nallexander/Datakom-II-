@@ -13,6 +13,8 @@ OPCODE_ERR=   5
 MODE_NETASCII= "netascii"
 MODE_OCTET=    "octet"
 MODE_MAIL=     "mail"
+DATA_PACKET_SIZE = BLOCK_SIZE+4
+ACK_PACKET_SIZE = 4
 
 TFTP_PORT=6969
 
@@ -127,24 +129,24 @@ def tftp_transfer(fd, hostname, direction):
         ack_block =0
         # as long as it is not the last message
         while current_msg_size >= BLOCK_SIZE:
-            tries = 0
+            tries =0
             # try receiveing a new packet 1-MAX_TRIES times
             while(tries < MAX_TRIES):
                 print_debug("try get")
                 try:
                     print_debug("before recv")
                     bytes_sent = s.sendto(current_packet, addr_info)    
-                    recv = s.recvfrom(BLOCK_SIZE+4)
+                    recv = s.recvfrom(DATA_PACKET_SIZE)
                     print_debug("after recv")
                     break
                 except socket.timeout:
                     print_debug("timeoutexception get")                        
                     tries += 1
-            if handle_error(recv, OPCODE_DATA): # handle unexpected opcode
+            if handle_error(recv, OPCODE_DATA)or tries >= MAX_TRIES : # handle unexpected opcode
                 return ""
-            recv_pack = recv[0]
+            
             addr_info = recv[1]   #upade address
-            parsed_pack = parse_packet(recv_pack)
+            parsed_pack = parse_packet(recv[0])
             sent_block = parsed_pack[1]
             
             #if we received a new block of data, save it to a file and make an ack packet
@@ -152,13 +154,13 @@ def tftp_transfer(fd, hostname, direction):
                 ack_block = sent_block
                 fd.write( parsed_pack[2])
                 current_msg_size = len(parsed_pack[2])
-                current_packet= make_packet_ack(parsed_pack[1])
+                current_packet= make_packet_ack(ack_block)
                 
                 
             if DEBUG:
                 print("Received block: %d"% (ack_block))
         if current_msg_size < BLOCK_SIZE:
-            # send last ack
+            #send last ack
             bytes_sent = s.sendto(current_packet, addr_info)
         return ""
         
@@ -189,7 +191,7 @@ def tftp_transfer(fd, hostname, direction):
                 print_debug("try put")
                 try:
                     bytes_sent = s.sendto(current_packet,  addr_info)
-                    recv = s.recvfrom(BLOCK_SIZE)
+                    recv = s.recvfrom(ACK_PACKET_SIZE)
                     break
                 except socket.timeout:
                     print_debug("timeoutexception put")
@@ -199,8 +201,8 @@ def tftp_transfer(fd, hostname, direction):
                 return ""
             # success  change the block number to send 
             sent_block  = ack_block +1
-            recv_parsed = parse_packet(recv[0])
-            ack_block = recv_parsed[1]
+            parsed_pack= parse_packet(recv[0])
+            ack_block = parsed_pack[1]
             addr_info = recv[1]
             tries = 0
             
