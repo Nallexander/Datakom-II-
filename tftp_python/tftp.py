@@ -36,7 +36,7 @@ TFTP_GET = 1
 TFTP_PUT = 2
 
 # Debug mode
-DEBUG = True
+DEBUG = False
 
 
 def make_packet_rrq(filename, mode):
@@ -142,10 +142,11 @@ def tftp_transfer(fd, hostname, direction):
                 except socket.timeout:
                     print_debug("timeoutexception get")                        
                     tries += 1
-            if handle_error(recv, OPCODE_DATA)or tries >= MAX_TRIES : # handle unexpected opcode
+            if tries >= MAX_TRIES or handle_error(recv, OPCODE_DATA) : # handle unexpected opcode
+                print("Server not responding")
                 return ""
             
-            addr_info = recv[1]   #upade address
+            addr_info = recv[1]   #update address
             parsed_pack = parse_packet(recv[0])
             sent_block = parsed_pack[1]
             
@@ -157,8 +158,8 @@ def tftp_transfer(fd, hostname, direction):
                 current_packet= make_packet_ack(ack_block)
                 
                 
-            if DEBUG:
-                print("Received block: %d"% (ack_block))
+            
+            print_debug("Received block: %d"% (ack_block))
         if current_msg_size < BLOCK_SIZE:
             #send last ack
             bytes_sent = s.sendto(current_packet, addr_info)
@@ -175,8 +176,7 @@ def tftp_transfer(fd, hostname, direction):
         tries = 0
         # as long as we have something to send
         while len(current_msg) != 0 :
-            if DEBUG:
-                print('Sending block nr: %d'% (ack_block +1))
+            print_debug('Sending block nr: %d'% (ack_block +1))
             # if we are sending data
             if ack_block >= 0:
                 # send new data if acked, otherwise send the same data again
@@ -197,7 +197,8 @@ def tftp_transfer(fd, hostname, direction):
                     print_debug("timeoutexception put")
                     tries += 1
                             
-            if handle_error(recv,OPCODE_ACK) or tries>= MAX_TRIES : ## handles unexpected opcode
+            if tries>= MAX_TRIES or handle_error(recv,OPCODE_ACK): ## handles unexpected opcode
+                print("Server not responding")
                 return ""
             # success  change the block number to send 
             sent_block  = ack_block +1
