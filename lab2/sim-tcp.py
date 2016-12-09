@@ -26,6 +26,15 @@ import ns.network
 import ns.point_to_point
 import ns.flow_monitor
 
+# Debug flag
+DEBUG = True
+
+
+def print_debug(message):
+    if(DEBUG):
+        print(message)
+    return()
+
 #######################################################################################
 # SEEDING THE RNG
 #
@@ -81,11 +90,12 @@ cmd.AddValue ("on_off_rate", "OnOffApplication data sending rate")
 cmd.Parse(sys.argv)
 
 
+
 #######################################################################################
 # CREATE NODES
 
 nodes = ns.network.NodeContainer()
-nodes.Create(6)
+nodes.Create(11)
 
 
 #######################################################################################
@@ -103,25 +113,46 @@ ns.core.Config.SetDefault("ns3::Queue::MaxPackets", ns.core.UintegerValue(5))
 
 # To connect the point-to-point channels, we need to define NodeContainers for all the
 # point-to-point channels.
-n0n4 = ns.network.NodeContainer()
-n0n4.Add(nodes.Get(0))
-n0n4.Add(nodes.Get(4))
+n0n1 = ns.network.NodeContainer()
+n0n1.Add(nodes.Get(0))
+n0n1.Add(nodes.Get(1))
 
-n1n4 = ns.network.NodeContainer()
-n1n4.Add(nodes.Get(1))
-n1n4.Add(nodes.Get(4))
+n0n3 = ns.network.NodeContainer()
+n0n3.Add(nodes.Get(0))
+n0n3.Add(nodes.Get(3))
 
-n2n5 = ns.network.NodeContainer()
-n2n5.Add(nodes.Get(2))
-n2n5.Add(nodes.Get(5))
+n1n2 = ns.network.NodeContainer()
+n1n2.Add(nodes.Get(1))
+n1n2.Add(nodes.Get(2))
+
+n3n4 = ns.network.NodeContainer()
+n3n4.Add(nodes.Get(3))
+n3n4.Add(nodes.Get(4))
 
 n3n5 = ns.network.NodeContainer()
 n3n5.Add(nodes.Get(3))
 n3n5.Add(nodes.Get(5))
 
-n4n5 = ns.network.NodeContainer()
-n4n5.Add(nodes.Get(4))
-n4n5.Add(nodes.Get(5))
+n5n6 = ns.network.NodeContainer()
+n5n6.Add(nodes.Get(5))
+n5n6.Add(nodes.Get(6))
+
+n3n7 = ns.network.NodeContainer()
+n3n7.Add(nodes.Get(3))
+n3n7.Add(nodes.Get(7))
+
+n7n8 = ns.network.NodeContainer()
+n7n8.Add(nodes.Get(7))
+n7n8.Add(nodes.Get(8))
+
+n7n9 = ns.network.NodeContainer()
+n7n9.Add(nodes.Get(7))
+n7n9.Add(nodes.Get(9))
+
+n9n10 = ns.network.NodeContainer()
+n9n10.Add(nodes.Get(9))
+n9n10.Add(nodes.Get(10))
+
 
 # create point-to-point helper with common attributes
 pointToPoint = ns.point_to_point.PointToPointHelper()
@@ -132,11 +163,16 @@ pointToPoint.SetChannelAttribute("Delay",
                             ns.core.TimeValue(ns.core.MilliSeconds(int(cmd.latency))))
 
 # install network devices for all nodes based on point-to-point links
-d0d4 = pointToPoint.Install(n0n4)
-d1d4 = pointToPoint.Install(n1n4)
-d2d5 = pointToPoint.Install(n2n5)
+d0d1 = pointToPoint.Install(n0n1)
+d0d3 = pointToPoint.Install(n0n3)
+d1d2 = pointToPoint.Install(n1n2)
+d3d4 = pointToPoint.Install(n3n4)
 d3d5 = pointToPoint.Install(n3n5)
-d4d5 = pointToPoint.Install(n4n5)
+d5d6 = pointToPoint.Install(n5n6)
+d3d7 = pointToPoint.Install(n3n7)
+d7d8 = pointToPoint.Install(n7n8)
+d7d9 = pointToPoint.Install(n7n9)
+d9d10 = pointToPoint.Install(n9n10)
 
 # Here we can introduce an error model on the bottle-neck link (from node 4 to 5)
 #em = ns.network.RateErrorModel()
@@ -194,23 +230,41 @@ stack.Install(nodes)
 # Assign IP addresses for net devices
 address = ns.internet.Ipv4AddressHelper()
 
-address.SetBase(ns.network.Ipv4Address("10.1.1.0"), ns.network.Ipv4Mask("255.255.255.0"))
-if0if4 = address.Assign(d0d4)
 
-address.SetBase(ns.network.Ipv4Address("10.1.2.0"), ns.network.Ipv4Mask("255.255.255.0"))
-if1if4 = address.Assign(d1d4)
+address.SetBase(ns.network.Ipv4Address("1.0.0.0"), ns.network.Ipv4Mask("255.255.255.0"))
+if0if1 = address.Assign(d0d1)
 
-address.SetBase(ns.network.Ipv4Address("10.1.3.0"), ns.network.Ipv4Mask("255.255.255.0"))
-if2if5 = address.Assign(d2d5)
+address.SetBase(ns.network.Ipv4Address("1.1.0.0"), ns.network.Ipv4Mask("255.255.255.0"))
+if1if2 = address.Assign(d1d2)
 
-address.SetBase(ns.network.Ipv4Address("10.1.4.0"), ns.network.Ipv4Mask("255.255.255.0"))
+address.SetBase(ns.network.Ipv4Address("2.0.0.0"), ns.network.Ipv4Mask("255.255.255.0"))
+if0if3 = address.Assign(d0d3)
+
+address.SetBase(ns.network.Ipv4Address("2.1.0.0"), ns.network.Ipv4Mask("255.255.255.0"))
+if3if4 = address.Assign(d3d4)
+
+address.SetBase(ns.network.Ipv4Address("2.2.0.0"), ns.network.Ipv4Mask("255.255.255.0"))
 if3if5 = address.Assign(d3d5)
 
-address.SetBase(ns.network.Ipv4Address("10.1.5.0"), ns.network.Ipv4Mask("255.255.255.0"))
-if4if5 = address.Assign(d4d5)
+address.SetBase(ns.network.Ipv4Address("2.2.1.0"), ns.network.Ipv4Mask("255.255.255.0"))
+if5if6 = address.Assign(d5d6)
+
+address.SetBase(ns.network.Ipv4Address("2.3.0.0"), ns.network.Ipv4Mask("255.255.255.0"))
+if3if7 = address.Assign(d3d7)
+
+address.SetBase(ns.network.Ipv4Address("2.3.1.0"), ns.network.Ipv4Mask("255.255.255.0"))
+if7if8 = address.Assign(d7d8)
+
+address.SetBase(ns.network.Ipv4Address("2.3.2.0"), ns.network.Ipv4Mask("255.255.255.0"))
+if7if9 = address.Assign(d7d9)
+
+address.SetBase(ns.network.Ipv4Address("2.3.3.0"), ns.network.Ipv4Mask("255.255.255.0"))
+if9if10 = address.Assign(d9d10)
+
 
 # Turn on global static routing so we can actually be routed across the network.
 ns.internet.Ipv4GlobalRoutingHelper.PopulateRoutingTables()
+
 
 
 #######################################################################################
@@ -254,12 +308,12 @@ def SetupConnection(srcNode, dstNode, dstAddr, startTime, stopTime, protocol):
   client_apps.Stop(stopTime)
 
 
-SetupConnection(nodes.Get(0), nodes.Get(2), if2if5.GetAddress(0),
+SetupConnection(nodes.Get(2), nodes.Get(0), if0if1.GetAddress(0),
                    ns.core.Seconds(1.0), ns.core.Seconds(40.0), "TCP")
 #SetupTcpConnection(nodes.Get(1), nodes.Get(3), if3if5.GetAddress(0),
 #                   ns.core.Seconds(20.0), ns.core.Seconds(40.0))
-SetupConnection(nodes.Get(1), nodes.Get(3), if3if5.GetAddress(0),
-                   ns.core.Seconds(20.0), ns.core.Seconds(40.0), "UDP")
+#SetupConnection(nodes.Get(1), nodes.Get(3), if3if5.GetAddress(0),
+#                   ns.core.Seconds(20.0), ns.core.Seconds(40.0), "UDP")
 
 
 #######################################################################################
@@ -272,9 +326,9 @@ SetupConnection(nodes.Get(1), nodes.Get(3), if3if5.GetAddress(0),
 #
 # You will get two files, one for node 0 and one for node 1
 
-pointToPoint.EnablePcap("d0d4", d0d4.Get(0), True)
-pointToPoint.EnablePcap("d1d4", d1d4.Get(0), True)
-pointToPoint.EnablePcap("d4d5", d4d5.Get(0), True)
+pointToPoint.EnablePcap("d0d1", d0d1.Get(0), True)
+#pointToPoint.EnablePcap("d1d4", d1d4.Get(0), True)
+#pointToPoint.EnablePcap("d4d5", d4d5.Get(0), True)
 
 
 #######################################################################################
