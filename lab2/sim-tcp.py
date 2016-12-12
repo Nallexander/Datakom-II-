@@ -29,7 +29,7 @@ import ns.flow_monitor
 # Debug flag
 DEBUG = True
 LATENCY =1
-RATE = 500000
+RATE = 500000000
 ONOFFRATE = 300000
  
 
@@ -92,29 +92,26 @@ cmd.AddValue ("rate", "P2P data rate in bps")
 cmd.AddValue ("latency", "P2P link Latency in miliseconds")
 cmd.AddValue ("on_off_rate", "OnOffApplication data sending rate")
 cmd.Parse(sys.argv)
-print("Hej")
-print(cmd.rate)
-print(cmd.latency)
-N0N1RATE  = RATE
-N1N3RATE  = RATE
-N1N2RATE  = RATE
-N3N4RATE  = RATE
+N0N1RATE  = 100000000 #200Mbps
+N1N3RATE  = 100000000 #100
+N1N2RATE  = 100000000 #200
+N3N4RATE  = 100000000 #100
 N3N5RATE  = RATE
-N5N6RATE  = RATE
+N5N6RATE  = 100000000  #20
 N3N7RATE  = RATE
-N7N8RATE  = RATE
+N7N8RATE  = 100000000  #50
 N7N9RATE  = RATE
-N9N10RATE = RATE
-N0N1LATENCY  = LATENCY
-N1N3LATENCY  = LATENCY
-N1N2LATENCY  = LATENCY
-N3N4LATENCY  = LATENCY
+N9N10RATE = 100000000  # 30
+N0N1LATENCY  = 10
+N1N3LATENCY  = 10
+N1N2LATENCY  = 10
+N3N4LATENCY  = 10
 N3N5LATENCY  = LATENCY
-N5N6LATENCY  = LATENCY
+N5N6LATENCY  = 10
 N3N7LATENCY  = LATENCY
-N7N8LATENCY  = LATENCY
+N7N8LATENCY  = 10
 N7N9LATENCY  = LATENCY
-N9N10LATENCY = LATENCY
+N9N10LATENCY = 10
 
 
 #######################################################################################
@@ -143,9 +140,9 @@ n0n1 = ns.network.NodeContainer()
 n0n1.Add(nodes.Get(0))
 n0n1.Add(nodes.Get(1))
 
-n0n3 = ns.network.NodeContainer()
-n0n3.Add(nodes.Get(0))
-n0n3.Add(nodes.Get(3))
+n1n3 = ns.network.NodeContainer()
+n1n3.Add(nodes.Get(1))
+n1n3.Add(nodes.Get(3))
 
 n1n2 = ns.network.NodeContainer()
 n1n2.Add(nodes.Get(1))
@@ -338,9 +335,11 @@ def SetupConnection(srcNode, dstNode, dstAddr, startTime, stopTime, protocol):
   client_apps.Start(startTime)
   client_apps.Stop(stopTime)
 
-
-SetupConnection(nodes.Get(2), nodes.Get(0), if0if1.GetAddress(0),
-                   ns.core.Seconds(1.0), ns.core.Seconds(40.0), "TCP")
+# srcNode, dstNode, dstAddr, startTime, stopTime, protocol
+SetupConnection(nodes.Get(0), nodes.Get(2), if1if2.GetAddress(0),
+                  ns.core.Seconds(0.0), ns.core.Seconds(0.5), "TCP")
+SetupConnection(nodes.Get(0), nodes.Get(4), if3if4.GetAddress(0),
+                   ns.core.Seconds(0.0), ns.core.Seconds(0.5), "TCP")
 #SetupTcpConnection(nodes.Get(1), nodes.Get(3), if3if5.GetAddress(0),
 #                   ns.core.Seconds(20.0), ns.core.Seconds(40.0))
 #SetupConnection(nodes.Get(1), nodes.Get(3), if3if5.GetAddress(0),
@@ -357,7 +356,7 @@ SetupConnection(nodes.Get(2), nodes.Get(0), if0if1.GetAddress(0),
 #
 # You will get two files, one for node 0 and one for node 1
 
-pointToPoint.EnablePcap("d0d1", d0d1.Get(0), True)
+pointToPointList[0].EnablePcap("d0d1", d0d1.Get(0), True)
 #pointToPoint.EnablePcap("d1d4", d1d4.Get(0), True)
 #pointToPoint.EnablePcap("d4d5", d4d5.Get(0), True)
 
