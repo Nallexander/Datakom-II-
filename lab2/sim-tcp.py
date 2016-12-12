@@ -181,27 +181,33 @@ n9n10.Add(nodes.Get(10))
 
 rateList = [N0N1RATE,N1N3RATE,N1N2RATE,N3N4RATE,N3N5RATE,N5N6RATE,N3N7RATE,N7N8RATE,N7N9RATE,N9N10RATE]
 latencyList=[N0N1LATENCY,N1N3LATENCY,N1N2LATENCY,N3N4LATENCY,N3N5LATENCY,N5N6LATENCY,N3N7LATENCY,N7N8LATENCY,N7N9LATENCY,N9N10LATENCY]
+"""
 pointToPointList = []
-for num in range(10):
-    pointToPoint = ns.point_to_point.PointToPointHelper()
-    pointToPoint.SetDeviceAttribute("Mtu", ns.core.UintegerValue(1500))
-    pointToPoint.SetDeviceAttribute("DataRate",
-                            ns.network.DataRateValue(ns.network.DataRate(int(rateList[num]))))
-    pointToPoint.SetChannelAttribute("Delay",
-                            ns.core.TimeValue(ns.core.MilliSeconds(int(latencyList[num]))))
-    pointToPointList.append(pointToPoint)
+pointToPoint = ns.point_to_point.PointToPointHelper()
+#for num in range(10):
+pointToPoint.SetDeviceAttribute("Mtu", ns.core.UintegerValue(1500))
+pointToPoint.SetDeviceAttribute("DataRate", ns.network.DataRateValue(ns.network.DataRate(int(RATE))))
+pointToPoint.SetChannelAttribute("Delay", ns.core.TimeValue(ns.core.MilliSeconds(int(LATENCY))))
+    #pointToPointList.append(pointToPoint)
 # install network devices for all nodes based on point-to-point links    
-d0d1  = pointToPointList[0].Install(n0n1)
-d1d3  = pointToPointList[1].Install(n1n3)
-d1d2  = pointToPointList[2].Install(n1n2)
-d3d4  = pointToPointList[3].Install(n3n4)
-d3d5  = pointToPointList[4].Install(n3n5)
-d5d6  = pointToPointList[5].Install(n5n6)
-d3d7  = pointToPointList[6].Install(n3n7)
-d7d8  = pointToPointList[7].Install(n7n8)
-d7d9  = pointToPointList[8].Install(n7n9)
-d9d10 = pointToPointList[9].Install(n9n10)
+"""
+pointToPoint = ns.point_to_point.PointToPointHelper()
+pointToPoint.SetDeviceAttribute("Mtu", ns.core.UintegerValue(1500))
+pointToPoint.SetDeviceAttribute("DataRate",
+                            ns.network.DataRateValue(ns.network.DataRate(int(cmd.rate))))
+pointToPoint.SetChannelAttribute("Delay",
+                            ns.core.TimeValue(ns.core.MilliSeconds(int(cmd.latency))))
 
+d0d1  = pointToPoint.Install(n0n1)
+d1d3  = pointToPoint.Install(n1n3)
+d1d2  = pointToPoint.Install(n1n2)
+d3d4  = pointToPoint.Install(n3n4)
+d3d5  = pointToPoint.Install(n3n5)
+d5d6  = pointToPoint.Install(n5n6)
+d3d7  = pointToPoint.Install(n3n7)
+d7d8  = pointToPoint.Install(n7n8)
+d7d9  = pointToPoint.Install(n7n9)
+d9d10 = pointToPoint.Install(n9n10)
 # Here we can introduce an error model on the bottle-neck link (from node 4 to 5)
 #em = ns.network.RateErrorModel()
 #em.SetAttribute("ErrorUnit", ns.core.StringValue("ERROR_UNIT_PACKET"))
@@ -338,8 +344,8 @@ def SetupConnection(srcNode, dstNode, dstAddr, startTime, stopTime, protocol):
 # srcNode, dstNode, dstAddr, startTime, stopTime, protocol
 SetupConnection(nodes.Get(0), nodes.Get(2), if1if2.GetAddress(0),
                   ns.core.Seconds(0.0), ns.core.Seconds(0.5), "TCP")
-SetupConnection(nodes.Get(0), nodes.Get(4), if3if4.GetAddress(0),
-                   ns.core.Seconds(0.0), ns.core.Seconds(0.5), "TCP")
+#SetupConnection(nodes.Get(0), nodes.Get(4), if3if4.GetAddress(0),
+#                   ns.core.Seconds(0.0), ns.core.Seconds(0.5), "TCP")
 #SetupTcpConnection(nodes.Get(1), nodes.Get(3), if3if5.GetAddress(0),
 #                   ns.core.Seconds(20.0), ns.core.Seconds(40.0))
 #SetupConnection(nodes.Get(1), nodes.Get(3), if3if5.GetAddress(0),
@@ -356,7 +362,7 @@ SetupConnection(nodes.Get(0), nodes.Get(4), if3if4.GetAddress(0),
 #
 # You will get two files, one for node 0 and one for node 1
 
-pointToPointList[0].EnablePcap("d0d1", d0d1.Get(0), True)
+pointToPoint.EnablePcap("d0d1a", d0d1.Get(0), True)
 #pointToPoint.EnablePcap("d1d4", d1d4.Get(0), True)
 #pointToPoint.EnablePcap("d4d5", d4d5.Get(0), True)
 
