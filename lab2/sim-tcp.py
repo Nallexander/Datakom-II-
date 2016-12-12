@@ -28,6 +28,10 @@ import ns.flow_monitor
 
 # Debug flag
 DEBUG = True
+LATENCY =1
+RATE = 500000
+ONOFFRATE = 300000
+ 
 
 
 def print_debug(message):
@@ -81,14 +85,36 @@ ns.core.LogComponentEnable("TcpCongestionOps", ns.core.LOG_LEVEL_INFO)
 cmd = ns.core.CommandLine()
 
 # Default values
-cmd.latency = 1
-cmd.rate = 500000
-cmd.on_off_rate = 300000
+cmd.latency = LATENCY
+cmd.rate = RATE
+cmd.on_off_rate = ONOFFRATE
 cmd.AddValue ("rate", "P2P data rate in bps")
 cmd.AddValue ("latency", "P2P link Latency in miliseconds")
 cmd.AddValue ("on_off_rate", "OnOffApplication data sending rate")
 cmd.Parse(sys.argv)
-
+print("Hej")
+print(cmd.rate)
+print(cmd.latency)
+N0N1RATE  = RATE
+N0N3RATE  = RATE
+N1N2RATE  = RATE
+N3N4RATE  = RATE
+N3N5RATE  = RATE
+N5N6RATE  = RATE
+N3N7RATE  = RATE
+N7N8RATE  = RATE
+N7N9RATE  = RATE
+N9N10RATE = RATE
+N0N1LATENCY  = LATENCY
+N0N3LATENCY  = LATENCY
+N1N2LATENCY  = LATENCY
+N3N4LATENCY  = LATENCY
+N3N5LATENCY  = LATENCY
+N5N6LATENCY  = LATENCY
+N3N7LATENCY  = LATENCY
+N7N8LATENCY  = LATENCY
+N7N9LATENCY  = LATENCY
+N9N10LATENCY = LATENCY
 
 
 #######################################################################################
@@ -155,24 +181,29 @@ n9n10.Add(nodes.Get(10))
 
 
 # create point-to-point helper with common attributes
-pointToPoint = ns.point_to_point.PointToPointHelper()
-pointToPoint.SetDeviceAttribute("Mtu", ns.core.UintegerValue(1500))
-pointToPoint.SetDeviceAttribute("DataRate",
-                            ns.network.DataRateValue(ns.network.DataRate(int(cmd.rate))))
-pointToPoint.SetChannelAttribute("Delay",
-                            ns.core.TimeValue(ns.core.MilliSeconds(int(cmd.latency))))
 
-# install network devices for all nodes based on point-to-point links
-d0d1 = pointToPoint.Install(n0n1)
-d0d3 = pointToPoint.Install(n0n3)
-d1d2 = pointToPoint.Install(n1n2)
-d3d4 = pointToPoint.Install(n3n4)
-d3d5 = pointToPoint.Install(n3n5)
-d5d6 = pointToPoint.Install(n5n6)
-d3d7 = pointToPoint.Install(n3n7)
-d7d8 = pointToPoint.Install(n7n8)
-d7d9 = pointToPoint.Install(n7n9)
-d9d10 = pointToPoint.Install(n9n10)
+rateList = [N0N1RATE,N0N3RATE,N1N2RATE,N3N4RATE,N3N5RATE,N5N6RATE,N3N7RATE,N7N8RATE,N7N9RATE,N9N10RATE]
+latencyList=[N0N1LATENCY,N0N3LATENCY,N1N2LATENCY,N3N4LATENCY,N3N5LATENCY,N5N6LATENCY,N3N7LATENCY,N7N8LATENCY,N7N9LATENCY,N9N10LATENCY]
+pointToPointList = []
+for num in range(10):
+    pointToPoint = ns.point_to_point.PointToPointHelper()
+    pointToPoint.SetDeviceAttribute("Mtu", ns.core.UintegerValue(1500))
+    pointToPoint.SetDeviceAttribute("DataRate",
+                            ns.network.DataRateValue(ns.network.DataRate(int(rateList[num]))))
+    pointToPoint.SetChannelAttribute("Delay",
+                            ns.core.TimeValue(ns.core.MilliSeconds(int(latencyList[num]))))
+    pointToPointList.append(pointToPoint)
+# install network devices for all nodes based on point-to-point links    
+d0d1  = pointToPointList[0].Install(n0n1)
+d0d3  = pointToPointList[1].Install(n0n3)
+d1d2  = pointToPointList[2].Install(n1n2)
+d3d4  = pointToPointList[3].Install(n3n4)
+d3d5  = pointToPointList[4].Install(n3n5)
+d5d6  = pointToPointList[5].Install(n5n6)
+d3d7  = pointToPointList[6].Install(n3n7)
+d7d8  = pointToPointList[7].Install(n7n8)
+d7d9  = pointToPointList[8].Install(n7n9)
+d9d10 = pointToPointList[9].Install(n9n10)
 
 # Here we can introduce an error model on the bottle-neck link (from node 4 to 5)
 #em = ns.network.RateErrorModel()
