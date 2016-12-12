@@ -166,16 +166,24 @@ def setRateLatency(nxnx, rate, latency):
 
 RATE = 100000000
 LATENCY = 2
-d0d1 = setRateLatency(n0n1, RATE, LATENCY)
-d1d3 = setRateLatency(n1n3, RATE, LATENCY)
-d1d2 = setRateLatency(n1n2, RATE, LATENCY)
-d3d4 = setRateLatency(n3n4, RATE, LATENCY)
-d3d5 = setRateLatency(n3n5, RATE, LATENCY)
-d5d6 = setRateLatency(n5n6, RATE, LATENCY)
-d3d7 = setRateLatency(n3n7, RATE, LATENCY)
-d7d8 = setRateLatency(n7n8, RATE, LATENCY)
-d7d9 = setRateLatency(n7n9, RATE, LATENCY)
-d9d10 = setRateLatency(n9n10, RATE, LATENCY)
+LOCALRATE = 200000000
+LOCALLATENCY = 0
+RRRATE = 500000000
+RRLATENCY = 1
+RCRATE = 100000000
+RCLATENCY = 10
+
+
+d0d1 = setRateLatency(n0n1, LOCALRATE, LOCALLATENCY)
+d1d3 = setRateLatency(n1n3, 200000000, 10)
+d1d2 = setRateLatency(n1n2, LOCALRATE, LOCALLATENCY)
+d3d4 = setRateLatency(n3n4, RCRATE, RCLATENCY)
+d3d5 = setRateLatency(n3n5, RRRATE, RRLATENCY)
+d5d6 = setRateLatency(n5n6, RCRATE, RCLATENCY)
+d3d7 = setRateLatency(n3n7, RRRATE, RRLATENCY)
+d7d8 = setRateLatency(n7n8, RCRATE, RCLATENCY)
+d7d9 = setRateLatency(n7n9, RRRATE, RRLATENCY)
+d9d10 = setRateLatency(n9n10, RCRATE, RCLATENCY)
 
 
 """
@@ -325,9 +333,11 @@ def SetupConnection(srcNode, dstNode, dstAddr, startTime, stopTime, protocol):
   client_apps.Stop(stopTime)
 
 
-SetupConnection(nodes.Get(2), nodes.Get(0), if0if1.GetAddress(0),
+SetupConnection(nodes.Get(0), nodes.Get(2), if1if2.GetAddress(1),
                    ns.core.Seconds(1.0), ns.core.Seconds(40.0), "TCP")
-#SetupTcpConnection(nodes.Get(1), nodes.Get(3), if3if5.GetAddress(0),
+SetupConnection(nodes.Get(4), nodes.Get(0), if0if1.GetAddress(0),
+                   ns.core.Seconds(5.0), ns.core.Seconds(40.0), "TCP")
+#SetupTcpConnection(nodes.Get(), nodes.Get(3), if3if5.GetAddress(0),
 #                   ns.core.Seconds(20.0), ns.core.Seconds(40.0))
 #SetupConnection(nodes.Get(1), nodes.Get(3), if3if5.GetAddress(0),
 #                   ns.core.Seconds(20.0), ns.core.Seconds(40.0), "UDP")
