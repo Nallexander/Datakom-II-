@@ -96,7 +96,7 @@ print("Hej")
 print(cmd.rate)
 print(cmd.latency)
 N0N1RATE  = RATE
-N0N3RATE  = RATE
+N1N3RATE  = RATE
 N1N2RATE  = RATE
 N3N4RATE  = RATE
 N3N5RATE  = RATE
@@ -106,7 +106,7 @@ N7N8RATE  = RATE
 N7N9RATE  = RATE
 N9N10RATE = RATE
 N0N1LATENCY  = LATENCY
-N0N3LATENCY  = LATENCY
+N1N3LATENCY  = LATENCY
 N1N2LATENCY  = LATENCY
 N3N4LATENCY  = LATENCY
 N3N5LATENCY  = LATENCY
@@ -182,8 +182,8 @@ n9n10.Add(nodes.Get(10))
 
 # create point-to-point helper with common attributes
 
-rateList = [N0N1RATE,N0N3RATE,N1N2RATE,N3N4RATE,N3N5RATE,N5N6RATE,N3N7RATE,N7N8RATE,N7N9RATE,N9N10RATE]
-latencyList=[N0N1LATENCY,N0N3LATENCY,N1N2LATENCY,N3N4LATENCY,N3N5LATENCY,N5N6LATENCY,N3N7LATENCY,N7N8LATENCY,N7N9LATENCY,N9N10LATENCY]
+rateList = [N0N1RATE,N1N3RATE,N1N2RATE,N3N4RATE,N3N5RATE,N5N6RATE,N3N7RATE,N7N8RATE,N7N9RATE,N9N10RATE]
+latencyList=[N0N1LATENCY,N1N3LATENCY,N1N2LATENCY,N3N4LATENCY,N3N5LATENCY,N5N6LATENCY,N3N7LATENCY,N7N8LATENCY,N7N9LATENCY,N9N10LATENCY]
 pointToPointList = []
 for num in range(10):
     pointToPoint = ns.point_to_point.PointToPointHelper()
@@ -195,7 +195,7 @@ for num in range(10):
     pointToPointList.append(pointToPoint)
 # install network devices for all nodes based on point-to-point links    
 d0d1  = pointToPointList[0].Install(n0n1)
-d0d3  = pointToPointList[1].Install(n0n3)
+d1d3  = pointToPointList[1].Install(n1n3)
 d1d2  = pointToPointList[2].Install(n1n2)
 d3d4  = pointToPointList[3].Install(n3n4)
 d3d5  = pointToPointList[4].Install(n3n5)
@@ -269,7 +269,7 @@ address.SetBase(ns.network.Ipv4Address("1.1.0.0"), ns.network.Ipv4Mask("255.255.
 if1if2 = address.Assign(d1d2)
 
 address.SetBase(ns.network.Ipv4Address("2.0.0.0"), ns.network.Ipv4Mask("255.255.255.0"))
-if0if3 = address.Assign(d0d3)
+if1if3 = address.Assign(d1d3)
 
 address.SetBase(ns.network.Ipv4Address("2.1.0.0"), ns.network.Ipv4Mask("255.255.255.0"))
 if3if4 = address.Assign(d3d4)
