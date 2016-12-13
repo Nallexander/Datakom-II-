@@ -83,12 +83,32 @@ cmd = ns.core.CommandLine()
 # Default values
 cmd.latency = 1
 cmd.rate = 5000000
-cmd.on_off_rate = 50000000
+cmd.on_off_rate = 200000000
 cmd.AddValue ("rate", "P2P data rate in bps")
 cmd.AddValue ("latency", "P2P link Latency in miliseconds")
 #cmd.AddValue ("on_off_rate", "OnOffApplication data sending rate")
 cmd.AddValue ("bulk_max_bytes", "BulkSendApplication data to be sent")
 cmd.Parse(sys.argv)
+
+RATE = 100000000
+LATENCY = 2
+LOCALRATE = 200000000
+LOCALLATENCY = 0
+RRRATE = 500000000
+RRLATENCY = 1
+RCRATE = 100000000
+RCLATENCY = 10
+
+#Start and Stop time for the clients
+CSTART = 1.0
+CSTOP = 10.0 
+
+#If this flag is true, the client is activated for each number
+CLIENT1 = True
+CLIENT2 = False
+CLIENT3 = False
+CLIENT4 = False
+CLIENT5 = False
 
 
 
@@ -165,14 +185,6 @@ def setRateLatency(nxnx, rate, latency):
                             ns.core.TimeValue(ns.core.MilliSeconds(int(latency))))
     return pointToPoint.Install(nxnx)
 
-RATE = 100000000
-LATENCY = 2
-LOCALRATE = 2000000
-LOCALLATENCY = 0
-RRRATE = 500000000
-RRLATENCY = 1
-RCRATE = 100000000
-RCLATENCY = 10
 
 
 d0d1 = setRateLatency(n0n1, LOCALRATE, LOCALLATENCY)
@@ -339,16 +351,20 @@ def SetupConnection(srcNode, dstNode, dstAddr, startTime, stopTime, protocol):
   client_apps.Start(startTime)
   client_apps.Stop(stopTime)
 
-
-SetupConnection(nodes.Get(0), nodes.Get(2), if1if2.GetAddress(1),
+if CLIENT1:
+  SetupConnection(nodes.Get(0), nodes.Get(2), if1if2.GetAddress(1),
+                   ns.core.Seconds(CSTART), ns.core.Seconds(CSTOP), "TCP")
+if CLIENT2:  
+  SetupConnection(nodes.Get(0), nodes.Get(4), if3if4.GetAddress(1),
                    ns.core.Seconds(1.0), ns.core.Seconds(31.0), "TCP")
-SetupConnection(nodes.Get(0), nodes.Get(4), if3if4.GetAddress(1),
+if CLIENT3:
+  SetupConnection(nodes.Get(0), nodes.Get(6), if5if6.GetAddress(1),
                    ns.core.Seconds(1.0), ns.core.Seconds(31.0), "TCP")
-SetupConnection(nodes.Get(0), nodes.Get(6), if5if6.GetAddress(1),
+if CLIENT4:
+  SetupConnection(nodes.Get(0), nodes.Get(8), if7if8.GetAddress(1),
                    ns.core.Seconds(1.0), ns.core.Seconds(31.0), "TCP")
-SetupConnection(nodes.Get(0), nodes.Get(8), if7if8.GetAddress(1),
-                   ns.core.Seconds(1.0), ns.core.Seconds(31.0), "TCP")
-SetupConnection(nodes.Get(0), nodes.Get(10), if9if10.GetAddress(1),
+if CLIENT5:
+  SetupConnection(nodes.Get(0), nodes.Get(10), if9if10.GetAddress(1),
                    ns.core.Seconds(1.0), ns.core.Seconds(31.0), "TCP")
 
 
