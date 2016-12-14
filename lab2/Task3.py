@@ -92,19 +92,19 @@ cmd.AddValue ("on_off_rate", "OnOffApplication data sending rate")
 cmd.Parse(sys.argv)
 
 #The rate and latency for the server's Internet connection
-IRATE = 20000000
+IRATE = 5000000
 ILATENCY = 2
 #The rate and latency for the server's local network
 LOCALRATE = 200000000
 LOCALLATENCY = 0
 #The rate and latency between two routers in the network
 RRRATE = 500000000
-RRLATENCY = 5
+RRLATENCY = 1
 #The rate and latency between a client and a router in the network
 RCRATE = 100000000
 RCLATENCY = 10
 #The latency between nodes 7 and 9
-ALATENCY = 10
+ALATENCY = 1
 
 #Start and Stop time for the clients
 #Start time is CSTART + a random number between 0 and 1
@@ -437,7 +437,7 @@ for flow_id, flow_stats in monitor.GetFlowStats():
         t = classifier.FindFlow(flow_id)
     #if (t.sourceAddress == "1.0.0.1"):
         proto = {6: 'TCP', 17: 'UDP'} [t.protocol]
-        output_file.write("%s --> %s: %f\n" % (t.sourceAddress, t.destinationAddress, flow_stats.rxBytes * 
+        output_file.write("%s --> %s:\n%f\n" % (t.sourceAddress, t.destinationAddress, flow_stats.rxBytes * 
                                      8.0 / 
                                      (flow_stats.timeLastRxPacket.GetSeconds() 
                                        - flow_stats.timeFirstTxPacket.GetSeconds())/
