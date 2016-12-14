@@ -26,6 +26,7 @@ import ns.network
 import ns.point_to_point
 import ns.flow_monitor
 import time
+from random import randint
 
 # Debug flag
 DEBUG = True
@@ -102,10 +103,14 @@ RRLATENCY = 5
 #The rate and latency between a client and a router in the network
 RCRATE = 100000000
 RCLATENCY = 10
+#The latency between nodes 7 and 9
+ALATENCY = 10
 
 #Start and Stop time for the clients
+#Start time is CSTART + a random number between 0 and 1
+#Stop time is the random start above + CSTOP
 CSTART = 1.0
-CSTOP = 10.0 
+CSTOP = 11.0 
 
 #For each number, if the flag is true, the corresponding client is activated
 CLIENT1 = True
@@ -199,7 +204,7 @@ d3d5 = setRateLatency(n3n5, RRRATE, RRLATENCY)
 d5d6 = setRateLatency(n5n6, RCRATE, RCLATENCY)
 d3d7 = setRateLatency(n3n7, RRRATE, RRLATENCY)
 d7d8 = setRateLatency(n7n8, RCRATE, RCLATENCY)
-d7d9 = setRateLatency(n7n9, RRRATE, 100)
+d7d9 = setRateLatency(n7n9, RRRATE, ALATENCY)
 d9d10 = setRateLatency(n9n10, RCRATE, RCLATENCY)
 
 
@@ -356,20 +361,25 @@ def SetupConnection(srcNode, dstNode, dstAddr, startTime, stopTime, protocol):
   client_apps.Stop(stopTime)
 
 if CLIENT1:
-  SetupConnection(nodes.Get(0), nodes.Get(2), if1if2.GetAddress(1),
-                   ns.core.Seconds(CSTART), ns.core.Seconds(CSTOP), "TCP")
-if CLIENT2:  
-  SetupConnection(nodes.Get(0), nodes.Get(4), if3if4.GetAddress(1),
-                   ns.core.Seconds(CSTART), ns.core.Seconds(CSTOP), "TCP")
+    rand1 = randint(1,1000)/float(1000)
+    SetupConnection(nodes.Get(0), nodes.Get(2), if1if2.GetAddress(1),
+                   ns.core.Seconds(CSTART+rand1), ns.core.Seconds(CSTOP+rand1), "TCP")
+if CLIENT2:
+    rand2 = randint(1,1000)/float(1000)
+    SetupConnection(nodes.Get(0), nodes.Get(4), if3if4.GetAddress(1),
+                   ns.core.Seconds(CSTART+rand2), ns.core.Seconds(CSTOP+rand2), "TCP")
 if CLIENT3:
-  SetupConnection(nodes.Get(0), nodes.Get(6), if5if6.GetAddress(1),
-                   ns.core.Seconds(CSTART), ns.core.Seconds(CSTOP), "TCP")
+    rand3 = randint(1,1000)/float(1000)
+    SetupConnection(nodes.Get(0), nodes.Get(6), if5if6.GetAddress(1),
+                   ns.core.Seconds(CSTART+rand3), ns.core.Seconds(CSTOP+rand3), "TCP")
 if CLIENT4:
-  SetupConnection(nodes.Get(0), nodes.Get(8), if7if8.GetAddress(1),
-                   ns.core.Seconds(CSTART), ns.core.Seconds(CSTOP), "TCP")
+    rand4 = randint(1,1000)/float(1000)
+    SetupConnection(nodes.Get(0), nodes.Get(8), if7if8.GetAddress(1),
+                   ns.core.Seconds(CSTART+rand4), ns.core.Seconds(CSTOP+rand4), "TCP")
 if CLIENT5:
-  SetupConnection(nodes.Get(0), nodes.Get(10), if9if10.GetAddress(1),
-                   ns.core.Seconds(CSTART), ns.core.Seconds(CSTOP), "TCP")
+    rand5 = randint(1,1000)/float(1000)
+    SetupConnection(nodes.Get(0), nodes.Get(10), if9if10.GetAddress(1),
+                   ns.core.Seconds(CSTART+rand5), ns.core.Seconds(CSTOP+rand5), "TCP")
 
 
 
@@ -419,8 +429,29 @@ ns.core.Simulator.Run()
 monitor.CheckForLostPackets()
 
 classifier = flowmon_helper.GetClassifier()
+output_file = open("output.txt", "a")
+
+output_file.write("IRATE: %d Mbps, RRLATENCY: %d ms, ALATENCY: %d ms\n" % (IRATE/1000000, RRLATENCY, ALATENCY))
 
 for flow_id, flow_stats in monitor.GetFlowStats():
+        t = classifier.FindFlow(flow_id)
+    #if (t.sourceAddress == "1.0.0.1"):
+        proto = {6: 'TCP', 17: 'UDP'} [t.protocol]
+        output_file.write("%s --> %s: %f\n" % (t.sourceAddress, t.destinationAddress, flow_stats.rxBytes * 
+                                     8.0 / 
+                                     (flow_stats.timeLastRxPacket.GetSeconds() 
+                                       - flow_stats.timeFirstTxPacket.GetSeconds())/
+                                     1024/
+                                     1024))
+        #output_file.write("%s %s/%s --> %s/%i  Throughput: %f Mbps \n" % (proto, t.sourceAddress, t.sourcePort, t.destinationAddress, t.destinationPort, flow_stats.rxBytes * 
+         #                            8.0 / 
+          #                           (flow_stats.timeLastRxPacket.GetSeconds() 
+           #                            - flow_stats.timeFirstTxPacket.GetSeconds())/
+            #                         1024/
+             #                        1024))
+
+#Old code
+"""
   t = classifier.FindFlow(flow_id)
   proto = {6: 'TCP', 17: 'UDP'} [t.protocol]
   print ("FlowID: %i (%s %s/%s --> %s/%i)" % 
@@ -437,7 +468,8 @@ for flow_id, flow_stats in monitor.GetFlowStats():
                                        - flow_stats.timeFirstTxPacket.GetSeconds())/
                                      1024/
                                      1024))
-
-
+"""
+output_file.write("\n")
+output_file.close()
 # This is what we want to do last
 ns.core.Simulator.Destroy()
