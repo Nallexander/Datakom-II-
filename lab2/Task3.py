@@ -25,6 +25,7 @@ import ns.internet
 import ns.network
 import ns.point_to_point
 import ns.flow_monitor
+import time
 
 # Debug flag
 DEBUG = True
@@ -82,20 +83,23 @@ cmd = ns.core.CommandLine()
 
 # Default values
 cmd.latency = 1
-cmd.rate = 5000000
-cmd.on_off_rate = 200000000
+cmd.rate = 2000000
+cmd.on_off_rate = 7000000
 cmd.AddValue ("rate", "P2P data rate in bps")
 cmd.AddValue ("latency", "P2P link Latency in miliseconds")
-#cmd.AddValue ("on_off_rate", "OnOffApplication data sending rate")
-cmd.AddValue ("bulk_max_bytes", "BulkSendApplication data to be sent")
+cmd.AddValue ("on_off_rate", "OnOffApplication data sending rate")
 cmd.Parse(sys.argv)
 
-RATE = 100000000
-LATENCY = 2
+#The rate and latency for the server's Internet connection
+IRATE = 20000000
+ILATENCY = 2
+#The rate and latency for the server's local network
 LOCALRATE = 200000000
 LOCALLATENCY = 0
+#The rate and latency between two routers in the network
 RRRATE = 500000000
-RRLATENCY = 1
+RRLATENCY = 5
+#The rate and latency between a client and a router in the network
 RCRATE = 100000000
 RCLATENCY = 10
 
@@ -103,12 +107,12 @@ RCLATENCY = 10
 CSTART = 1.0
 CSTOP = 10.0 
 
-#If this flag is true, the client is activated for each number
+#For each number, if the flag is true, the corresponding client is activated
 CLIENT1 = True
-CLIENT2 = False
-CLIENT3 = False
-CLIENT4 = False
-CLIENT5 = False
+CLIENT2 = True
+CLIENT3 = True
+CLIENT4 = True
+CLIENT5 = True
 
 
 
@@ -188,14 +192,14 @@ def setRateLatency(nxnx, rate, latency):
 
 
 d0d1 = setRateLatency(n0n1, LOCALRATE, LOCALLATENCY)
-d1d3 = setRateLatency(n1n3, 200000000, 10)
+d1d3 = setRateLatency(n1n3, IRATE, ILATENCY)
 d1d2 = setRateLatency(n1n2, LOCALRATE, LOCALLATENCY)
 d3d4 = setRateLatency(n3n4, RCRATE, RCLATENCY)
 d3d5 = setRateLatency(n3n5, RRRATE, RRLATENCY)
 d5d6 = setRateLatency(n5n6, RCRATE, RCLATENCY)
 d3d7 = setRateLatency(n3n7, RRRATE, RRLATENCY)
 d7d8 = setRateLatency(n7n8, RCRATE, RCLATENCY)
-d7d9 = setRateLatency(n7n9, RRRATE, RRLATENCY)
+d7d9 = setRateLatency(n7n9, RRRATE, 100)
 d9d10 = setRateLatency(n9n10, RCRATE, RCLATENCY)
 
 
@@ -230,11 +234,11 @@ ns.core.Config.SetDefault("ns3::TcpSocket::SegmentSize", ns.core.UintegerValue(1
 # If you want, you may set a default TCP version here. It will affect all TCP
 # connections created in the simulator. If you want to simulate different TCP versions
 # at the same time, see below for how to do that.
-#ns.core.Config.SetDefault("ns3::TcpL4Protocol::SocketType",
+ns.core.Config.SetDefault("ns3::TcpL4Protocol::SocketType",
 #                          ns.core.StringValue("ns3::TcpTahoe"))
 #                          ns.core.StringValue("ns3::TcpReno"))
 #                          ns.core.StringValue("ns3::TcpNewReno"))
-#                          ns.core.StringValue("ns3::TcpWestwood"))
+                          ns.core.StringValue("ns3::TcpWestwood"))
 
 # Some examples of attributes for some of the TCP versions.
 #ns.core.Config.SetDefault("ns3::TcpNewReno::ReTxThreshold", ns.core.UintegerValue(4))
@@ -356,16 +360,16 @@ if CLIENT1:
                    ns.core.Seconds(CSTART), ns.core.Seconds(CSTOP), "TCP")
 if CLIENT2:  
   SetupConnection(nodes.Get(0), nodes.Get(4), if3if4.GetAddress(1),
-                   ns.core.Seconds(1.0), ns.core.Seconds(31.0), "TCP")
+                   ns.core.Seconds(CSTART), ns.core.Seconds(CSTOP), "TCP")
 if CLIENT3:
   SetupConnection(nodes.Get(0), nodes.Get(6), if5if6.GetAddress(1),
-                   ns.core.Seconds(1.0), ns.core.Seconds(31.0), "TCP")
+                   ns.core.Seconds(CSTART), ns.core.Seconds(CSTOP), "TCP")
 if CLIENT4:
   SetupConnection(nodes.Get(0), nodes.Get(8), if7if8.GetAddress(1),
-                   ns.core.Seconds(1.0), ns.core.Seconds(31.0), "TCP")
+                   ns.core.Seconds(CSTART), ns.core.Seconds(CSTOP), "TCP")
 if CLIENT5:
   SetupConnection(nodes.Get(0), nodes.Get(10), if9if10.GetAddress(1),
-                   ns.core.Seconds(1.0), ns.core.Seconds(31.0), "TCP")
+                   ns.core.Seconds(CSTART), ns.core.Seconds(CSTOP), "TCP")
 
 
 
@@ -379,7 +383,7 @@ if CLIENT5:
 #
 # You will get two files, one for node 0 and one for node 1
 
-pointToPoint.EnablePcap("d0d1", d0d1.Get(0), True)
+pointToPoint.EnablePcap("Irate:"+ str(IRATE/1000000) + "Mbps", d0d1.Get(0), True)
 #pointToPoint.EnablePcap("d1d4", d1d4.Get(0), True)
 #pointToPoint.EnablePcap("d4d5", d4d5.Get(0), True)
 
