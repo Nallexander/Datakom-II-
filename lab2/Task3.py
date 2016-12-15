@@ -429,7 +429,7 @@ ns.core.Simulator.Run()
 monitor.CheckForLostPackets()
 
 classifier = flowmon_helper.GetClassifier()
-output_file = open("output.txt", "a")
+output_file = open("output1.txt", "a")
 
 output_file.write("IRATE: %d Mbps, RRLATENCY: %d ms, ALATENCY: %d ms\n" % (IRATE/1000000, RRLATENCY, ALATENCY))
 
